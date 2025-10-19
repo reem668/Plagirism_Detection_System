@@ -1,6 +1,6 @@
 <?php
 session_start();
-include 'db.php';
+include 'includes/db.php';
 
 // --- Get inputs safely ---
 $email = trim($_POST['email']);
