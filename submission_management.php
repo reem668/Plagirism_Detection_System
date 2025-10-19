@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Plagiarism Detection Dashboard</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
 <style>
     * {
         box-sizing: border-box;
@@ -18,48 +19,134 @@
         min-height: 100vh;
     }
 
-    /* ===== Sidebar ===== */
+    /* ===== Sliding Sidebar ===== */
     .sidebar {
-        width: 230px;
-        background: #1e3a8a;
+        width: 80px;
+        background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%);
         color: white;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        padding: 20px 15px;
+        padding: 20px 0;
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100vh;
+        transition: width 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        overflow: hidden;
+        z-index: 1000;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.1);
     }
 
-    .sidebar h2 {
-        text-align: center;
+    .sidebar:hover {
+        width: 250px;
+    }
+
+    .sidebar-header {
+        padding: 0 20px;
         margin-bottom: 30px;
+        white-space: nowrap;
+    }
+
+    .sidebar-header h2 {
+        font-size: 20px;
         font-weight: 600;
+        opacity: 0;
+        transition: opacity 0.3s ease 0.1s;
+    }
+
+    .sidebar:hover .sidebar-header h2 {
+        opacity: 1;
+    }
+
+    .sidebar-header .icon-only {
+        display: block;
+        text-align: center;
+        font-size: 24px;
+        transition: opacity 0.2s;
+    }
+
+    .sidebar:hover .sidebar-header .icon-only {
+        opacity: 0;
+        display: none;
+    }
+
+    .sidebar-nav {
+        flex: 1;
     }
 
     .sidebar a {
         color: white;
         text-decoration: none;
-        display: block;
-        padding: 12px;
-        margin: 8px 0;
-        border-radius: 8px;
-        transition: 0.3s;
+        display: flex;
+        align-items: center;
+        padding: 15px 20px;
+        margin: 5px 10px;
+        border-radius: 12px;
+        transition: all 0.3s;
         cursor: pointer;
         font-size: 15px;
+        position: relative;
+        white-space: nowrap;
+    }
+
+    .sidebar a i {
+        font-size: 20px;
+        min-width: 20px;
+        text-align: center;
+    }
+
+    .sidebar a .link-text {
+        margin-left: 15px;
+        opacity: 0;
+        transition: opacity 0.3s ease 0.1s;
+    }
+
+    .sidebar:hover a .link-text {
+        opacity: 1;
     }
 
     .sidebar a:hover, .sidebar a.active {
-        background-color: #3b82f6;
+        background-color: rgba(59, 130, 246, 0.5);
+        transform: translateX(5px);
     }
 
     .sidebar .logout {
+        background-color: rgba(239, 68, 68, 0.8);
+        margin: 10px;
+    }
+
+    .sidebar .logout:hover {
         background-color: #ef4444;
-        text-align: center;
+    }
+
+    /* Tooltip for collapsed state */
+    .sidebar a::before {
+        content: attr(data-tooltip);
+        position: absolute;
+        left: 80px;
+        background: #1e3a8a;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 8px;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s;
+        font-size: 13px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .sidebar:not(:hover) a:hover::before {
+        opacity: 1;
     }
 
     /* ===== Main Content ===== */
     .main-content {
         flex: 1;
+        margin-left: 80px;
         padding: 40px;
+        transition: margin-left 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
         position: relative;
         background: #f9fafc;
     }
@@ -190,6 +277,7 @@
         bottom: -400px;
         right: 30px;
         width: 300px;
+        height: 400px;
         background: white;
         border-radius: 12px;
         box-shadow: 0 6px 15px rgba(0,0,0,0.2);
@@ -274,27 +362,88 @@
         font-size: 14px;
     }
 
+    /* Mobile Toggle Button */
+    .mobile-toggle {
+        display: none;
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 1001;
+        background: #1e3a8a;
+        color: white;
+        border: none;
+        padding: 12px 15px;
+        border-radius: 10px;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .mobile-toggle i {
+        font-size: 20px;
+    }
+
     @media (max-width: 900px) {
         .content-grid {
             grid-template-columns: 1fr;
         }
+        
         .sidebar {
-            width: 180px;
+            transform: translateX(-100%);
+        }
+        
+        .sidebar.mobile-active {
+            transform: translateX(0);
+            width: 250px;
+        }
+        
+        .main-content {
+            margin-left: 0;
+        }
+        
+        .mobile-toggle {
+            display: block;
         }
     }
 </style>
 </head>
 <body>
 
-    <div class="sidebar">
+    <!-- Mobile Toggle Button -->
+    <button class="mobile-toggle" onclick="toggleMobileSidebar()">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <div class="sidebar" id="sidebar">
         <div>
-            <h2>Student</h2>
-            <a id="homeBtn">🏠 Home</a>
-            <a id="chatToggle">💬 Chat</a>
-            <a id="historyBtn">📜 Past History</a>
-            <a id="trashBtn">🗑️ Trash</a>
+            <div class="sidebar-header">
+                <div class="icon-only">👤</div>
+                <h2>Student Portal</h2>
+            </div>
+            
+            <div class="sidebar-nav">
+                <a id="homeBtn" class="active" data-tooltip="Home">
+                    <i class="fas fa-home"></i>
+                    <span class="link-text">Home</span>
+                </a>
+                <a id="chatToggle" data-tooltip="Chat">
+                    <i class="fas fa-comments"></i>
+                    <span class="link-text">Chat</span>
+                </a>
+                <a id="historyBtn" data-tooltip="Past History">
+                    <i class="fas fa-history"></i>
+                    <span class="link-text">Past History</span>
+                </a>
+                <a id="trashBtn" data-tooltip="Trash">
+                    <i class="fas fa-trash"></i>
+                    <span class="link-text">Trash</span>
+                </a>
+            </div>
         </div>
-        <a href="#" class="logout">Logout</a>
+        
+        <a href="#" class="logout" data-tooltip="Logout">
+            <i class="fas fa-sign-out-alt"></i>
+            <span class="link-text">Logout</span>
+        </a>
     </div>
 
     <div class="main-content">
@@ -347,7 +496,7 @@
 
         <!-- Trash Page -->
         <div id="trashPage" class="page">
-            <h1>🗑️ Trash</h1>
+            <h1>🗑 Trash</h1>
             <div class="trash-item"><h3>Old File - Removed</h3><p>Deleted on: 12 Oct 2025</p></div>
             <div class="trash-item"><h3>Duplicate Submission</h3><p>Deleted on: 10 Oct 2025</p></div>
         </div>
@@ -360,7 +509,7 @@
             <span style="cursor:pointer;" onclick="toggleChat()">✖</span>
         </div>
         <div class="chat-messages" id="chatMessages">
-            <p><strong>teacher</strong> Hey, how can i help you?</p>
+            <p><strong>Teacher:</strong> Hey, how can I help you?</p>
         </div>
         <div class="chat-input">
             <input type="text" id="chatInput" placeholder="Type a message...">
@@ -399,7 +548,7 @@ function sendMessage() {
 
     const messages = document.getElementById("chatMessages");
     const userMsg = document.createElement("p");
-    userMsg.innerHTML = `<strong>You:</strong> ${message}`;
+    userMsg.innerHTML = <strong>You:</strong> ${message};
     messages.appendChild(userMsg);
 
     input.value = "";
@@ -416,13 +565,27 @@ document.getElementById("historyBtn").addEventListener("click", () => showPage("
 document.getElementById("trashBtn").addEventListener("click", () => showPage("trash"));
 
 function showPage(page) {
+    // Remove active class from all links
+    document.querySelectorAll('.sidebar a').forEach(link => {
+        link.classList.remove('active');
+    });
+    
+    // Hide all pages
     mainPage.classList.remove("active");
     historyPage.classList.remove("active");
     trashPage.classList.remove("active");
 
-    if (page === "history") historyPage.classList.add("active");
-    else if (page === "trash") trashPage.classList.add("active");
-    else mainPage.classList.add("active");
+    // Show selected page and activate link
+    if (page === "history") {
+        historyPage.classList.add("active");
+        document.getElementById("historyBtn").classList.add("active");
+    } else if (page === "trash") {
+        trashPage.classList.add("active");
+        document.getElementById("trashBtn").classList.add("active");
+    } else {
+        mainPage.classList.add("active");
+        document.getElementById("homeBtn").classList.add("active");
+    }
 }
 
 // ===== Teacher Dropdown Visibility =====
@@ -432,6 +595,23 @@ document.getElementById("submissionType").addEventListener("change", function() 
         teacherDropdown.style.display = "block";
     } else {
         teacherDropdown.style.display = "none";
+    }
+});
+
+// ===== Mobile Sidebar Toggle =====
+function toggleMobileSidebar() {
+    document.getElementById('sidebar').classList.toggle('mobile-active');
+}
+
+// Close mobile sidebar when clicking outside
+document.addEventListener('click', function(event) {
+    const sidebar = document.getElementById('sidebar');
+    const toggle = document.querySelector('.mobile-toggle');
+    
+    if (window.innerWidth <= 900) {
+        if (!sidebar.contains(event.target) && !toggle.contains(event.target)) {
+            sidebar.classList.remove('mobile-active');
+        }
     }
 });
 </script>
