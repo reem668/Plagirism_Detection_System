@@ -118,8 +118,8 @@
                   <label for="role">Role:</label>
                   <input type="radio" id="role-student" name="role" value="student" required>
                   <label for="role-student">Student</label>
-                  <input type="radio" id="role-teacher" name="role" value="teacher" required>
-                  <label for="role-teacher">Teacher</label>
+                  <input type="radio" id="role-instructor" name="role" value="instructor" required>
+                  <label for="role-instructor">Instructor</label>
                 </div>
                 <div class="input-box">
                   <i class="fas fa-lock"></i>

@@ -28,7 +28,7 @@ $name = htmlspecialchars($_SESSION['user_name']);
 <body>
   <h1>Welcome, <?php echo $name; ?>!</h1>
 
-  <?php if ($role === 'teacher'): ?>
+  <?php if ($role === 'instructor'): ?>
       <p>You are logged in as a <strong>Teacher</strong>.</p>
       <p><a href="teacher_dashboard.php">Go to Teacher Dashboard</a></p>
   <?php else: ?>

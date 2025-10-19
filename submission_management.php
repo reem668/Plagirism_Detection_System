@@ -139,7 +139,7 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'student') {
         resize: none;
     }
 
-    input[type="file"], select {
+    select, input[type="file"] {
         width: 100%;
         margin-bottom: 15px;
         padding: 8px;
@@ -160,6 +160,26 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'student') {
 
     button:hover {
         background-color: #1e40af;
+    }
+
+    /* ===== File Warning ===== */
+    .file-warning {
+        display: none;
+        margin-top: 10px;
+        padding: 12px;
+        background: rgba(255, 0, 0, 0.1);
+        color: #b91c1c;
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 14px;
+        backdrop-filter: blur(5px);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-5px); }
+        to { opacity: 1; transform: translateY(0); }
     }
 
     /* ===== Results Box ===== */
@@ -310,11 +330,184 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'student') {
 
     .page { display: none; }
     .page.active { display: block; }
+    /* ===== Timeline ===== */
+.timeline {
+  position: relative;
+  margin: 30px 0;
+  padding-left: 30px;
+  border-left: 4px solid #1e3a8a;
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 30px;
+}
+
+.timeline-dot {
+  position: absolute;
+  left: -11px;
+  top: 5px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 3px solid #f9fafc;
+  box-shadow: 0 0 0 3px #1e3a8a;
+}
+
+.timeline-dot.low {
+  background-color: #22c55e; /* green */
+}
+
+.timeline-dot.medium {
+  background-color: #facc15; /* yellow */
+}
+
+.timeline-dot.high {
+  background-color: #ef4444; /* red */
+}
+
+.timeline-content {
+  background-color: white;
+  padding: 15px 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.timeline-content:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+}
+
+.timeline-content h3 {
+  color: #1e3a8a;
+  font-size: 18px;
+  margin-bottom: 6px;
+}
+
+.timeline-content p {
+  margin-bottom: 4px;
+  font-size: 14px;
+  color: #334155;
+}
+/* ===== Timeline (History Page) ===== */
+.timeline {
+  position: relative;
+  margin: 30px 0;
+  padding-left: 30px;
+  border-left: 4px solid #1e3a8a;
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 30px;
+}
+
+.timeline-dot {
+  position: absolute;
+  left: -11px;
+  top: 5px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 3px solid #f9fafc;
+  box-shadow: 0 0 0 3px #1e3a8a;
+}
+
+.timeline-dot.low {
+  background-color: #22c55e; /* green */
+}
+
+.timeline-dot.medium {
+  background-color: #facc15; /* yellow */
+}
+
+.timeline-dot.high {
+  background-color: #ef4444; /* red */
+}
+
+.timeline-content {
+  background-color: white;
+  padding: 15px 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.timeline-content:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+}
+
+.timeline-content h3 {
+  color: #1e3a8a;
+  font-size: 18px;
+  margin-bottom: 6px;
+}
+
+.timeline-content p {
+  margin-bottom: 4px;
+  font-size: 14px;
+  color: #334155;
+}
+
+/* ===== Trash Page ===== */
+.trash-subtext {
+  color: #475569;
+  font-size: 15px;
+  margin-bottom: 20px;
+}
+
+.trash-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.trash-card {
+  background-color: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.trash-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+}
+
+.trash-card h3 {
+  color: #1e3a8a;
+  margin-bottom: 8px;
+  font-size: 17px;
+}
+
+.trash-status {
+  color: #dc2626;
+  font-weight: 500;
+  margin-bottom: 10px;
+}
+
+.restore-btn {
+  background-color: #1e3a8a;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s ease;
+}
+
+.restore-btn:hover {
+  background-color: #3347c7;
+}
+
+
 </style>
 </head>
 <body>
-
-
 
 <div class="sidebar">
     <div>
@@ -348,7 +541,15 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'student') {
                 </div>
 
                 <textarea id="textInput" placeholder="Enter your text here..."></textarea>
-                <input type="file" id="fileInput" accept=".pdf, .doc, .docx">
+
+               <div class="file-upload-box">
+  <label for="fileInput">Upload File (Max 10 MB)
+    PDF,DOCX, DOC, TXT only
+  </label>
+  <input type="file" id="fileInput" accept=".pdf, .doc, .docx, .txt">
+  <div class="file-warning" id="fileWarning"></div>
+</div>
+
                 <button id="submitBtn" onclick="checkPlagiarism()">Submit</button>
             </div>
 
@@ -371,19 +572,72 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'student') {
         </div>
     </div>
 
-    <!-- Past History Page -->
-    <div id="historyPage" class="page">
-        <h1>📜 Past History</h1>
-        <div class="history-item"><h3>Submission #1</h3><p>Plagiarism Score: 45%</p></div>
-        <div class="history-item"><h3>Submission #2</h3><p>Plagiarism Score: 20%</p></div>
+   <!-- Past History Page (Timeline Style) -->
+<div id="historyPage" class="page">
+  <h1>📜 Submission History</h1>
+  <div class="timeline">
+    <div class="timeline-item">
+      <div class="timeline-dot low"></div>
+      <div class="timeline-content">
+        <h3>Essay on Climate Change</h3>
+        <p><strong>Date:</strong> Oct 10, 2025</p>
+        <p><strong>Course:</strong> Environmental Science</p>
+        <p><strong>Similarity:</strong> 18%</p>
+        <p><strong>Severity:</strong> Low</p>
+      </div>
     </div>
 
-    <!-- Trash Page -->
-    <div id="trashPage" class="page">
-        <h1>🗑️ Trash</h1>
-        <div class="trash-item"><h3>Old File - Removed</h3><p>Deleted on: 12 Oct 2025</p></div>
-        <div class="trash-item"><h3>Duplicate Submission</h3><p>Deleted on: 10 Oct 2025</p></div>
+    <div class="timeline-item">
+      <div class="timeline-dot medium"></div>
+      <div class="timeline-content">
+        <h3>AI Ethics Report</h3>
+        <p><strong>Date:</strong> Oct 14, 2025</p>
+        <p><strong>Course:</strong> Computer Science</p>
+        <p><strong>Similarity:</strong> 42%</p>
+        <p><strong>Severity:</strong> Medium</p>
+      </div>
     </div>
+
+    <div class="timeline-item">
+      <div class="timeline-dot high"></div>
+      <div class="timeline-content">
+        <h3>Literature Review on Psychology</h3>
+        <p><strong>Date:</strong> Oct 17, 2025</p>
+        <p><strong>Course:</strong> Psychology 101</p>
+        <p><strong>Similarity:</strong> 75%</p>
+        <p><strong>Severity:</strong> High</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+   <!-- ===== Trash Page (Stylish Deleted Submissions) ===== -->
+<div id="trashPage" class="page">
+  <h1>🗑️ Trash Bin</h1>
+  <p class="trash-subtext">Deleted submissions are kept here temporarily before permanent removal.</p>
+
+  <div class="trash-container">
+    <div class="trash-card">
+      <h3>Old Research Draft</h3>
+      <p><strong>Removed on:</strong> Oct 8, 2025</p>
+      <p class="trash-status">Status: Pending Deletion</p>
+      <button class="restore-btn">Restore</button>
+    </div>
+
+    <div class="trash-card">
+      <h3>Group Report on AI</h3>
+      <p><strong>Removed on:</strong> Oct 12, 2025</p>
+      <p class="trash-status">Status: Pending Deletion</p>
+      <button class="restore-btn">Restore</button>
+    </div>
+
+    <div class="trash-card">
+      <h3>Essay on Renewable Energy</h3>
+      <p><strong>Removed on:</strong> Oct 15, 2025</p>
+      <p class="trash-status">Status: Pending Deletion</p>
+      <button class="restore-btn">Restore</button>
+    </div>
+  </div>
 </div>
 
 <!-- Chat Box -->
@@ -434,13 +688,65 @@ Partial Match: ${document.getElementById("partialValue").textContent}
 
 Generated on: ${new Date().toLocaleString()}
     `;
-    const blob = new Blob([report], { type: "text/plain" });
+    // Ask user which format they want
+    const format = (prompt("Choose download format: pdf, docx, doc, txt", "pdf") || "").toLowerCase();
+    const mimeMap = {
+      pdf: "application/pdf",
+      docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      doc: "application/msword",
+      txt: "text/plain"
+    };
+
+    if (!mimeMap[format]) {
+      alert("Invalid format selected. Download cancelled.");
+      return;
+    }
+
+   
+    const blob = new Blob([report], { type: mimeMap[format] });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = "Plagiarism_Report.txt";
+    link.download = "Plagiarism_Report." + format;
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+    
 }
 
+// ===== File Validation =====
+document.getElementById('fileInput').addEventListener('change', function() {
+  const file = this.files[0];
+  const warning = document.getElementById('fileWarning');
+  const maxSize = 10 * 1024 * 1024; // 10 MB in bytes
+  const allowedExtensions = ['pdf', 'doc', 'docx', 'txt'];
+
+  if (!file) {
+    warning.style.display = 'none';
+    return;
+  }
+
+  const fileExtension = file.name.split('.').pop().toLowerCase();
+
+  // Check file type
+  if (!allowedExtensions.includes(fileExtension)) {
+    warning.textContent = 'File format not supported. Please upload documents in PDF, DOC, DOCX, or TXT format only.';
+    warning.style.display = 'block';
+    this.value = '';
+    return;
+  }
+
+  // Check file size
+  if (file.size > maxSize) {
+    warning.textContent = 'File too large! Please upload a file smaller than 10 MB.';
+    warning.style.display = 'block';
+    this.value = '';
+    return;
+  }
+
+  // All good
+  warning.style.display = 'none';
+});
 // ===== Chat Toggle =====
 const chatBox = document.getElementById("chatBox");
 const chatToggle = document.getElementById("chatToggle");
@@ -490,7 +796,6 @@ document.getElementById("submissionType").addEventListener("change", function() 
     teacherDropdown.style.display = (this.value === "specific") ? "block" : "none";
 });
 </script>
-
 
 </body>
 </html>

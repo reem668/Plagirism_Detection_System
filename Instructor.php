@@ -94,7 +94,7 @@ if (!isset($_SESSION['submissions'])) {
 // Handle sign out
 if (isset($_GET['signout'])) {
     session_destroy();
-    header("Location: login.php"); // Redirect to login page
+    header("Location: logout.php"); // Redirect to login page
     exit();
 }
 
