@@ -49,8 +49,8 @@
     <select id="riskFilter" class="filter-select" onchange="filterSubmissions()">
       <option value="">All Risk Levels</option>
       <option value="low">Low (0-30%)</option>
-      <option value="medium">Medium (31-60%)</option>
-      <option value="high">High (>60%)</option>
+      <option value="medium">Medium (31-70%)</option>
+      <option value="high">High (>70%)</option>
     </select>
 
     <button class="btn primary" onclick="exportToCSV()">
@@ -81,24 +81,107 @@
   </div>
 </section>
 
-<!-- Submission Details Modal -->
-<div id="submissionModal" class="modal" style="display: none;">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3>📄 Submission Details</h3>
-      <button class="close-btn" onclick="closeSubmissionModal()">&times;</button>
+<!-- Side Panel for Submission Details -->
+<div id="submissionPanel" class="side-panel">
+  <div class="side-panel-content">
+    <div class="side-panel-header">
+      <h3><i class="fas fa-file-alt"></i> Submission Details</h3>
+      <button class="close-panel-btn" onclick="closeSubmissionPanel()">&times;</button>
     </div>
-    <div class="modal-body">
-      <div class="submission-details" id="submissionDetailsContent">
-        <!-- Details loaded by JavaScript -->
+    <div class="side-panel-body">
+      <div class="submission-details-section">
+        <h4>📋 Document Information</h4>
+        <div class="info-grid">
+          <div class="info-item">
+            <label>Submission ID:</label>
+            <span id="panelSubmissionId"></span>
+          </div>
+          <div class="info-item">
+            <label>Document Title:</label>
+            <span id="panelDocTitle"></span>
+          </div>
+          <div class="info-item">
+            <label>Filename:</label>
+            <span id="panelFilename"></span>
+          </div>
+          <div class="info-item">
+            <label>Submission Date:</label>
+            <span id="panelSubmitDate"></span>
+          </div>
+        </div>
       </div>
-      <div style="margin-top: 20px; display: flex; gap: 10px;">
-        <button class="btn danger" onclick="deleteSubmission()">🗑️ Delete Submission</button>
-        <button class="btn" onclick="closeSubmissionModal()">Close</button>
+
+      <div class="submission-details-section">
+        <h4>👤 Student Information</h4>
+        <div class="info-grid">
+          <div class="info-item">
+            <label>Student Name:</label>
+            <span id="panelStudentName"></span>
+          </div>
+          <div class="info-item">
+            <label>Student Email:</label>
+            <span id="panelStudentEmail"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="submission-details-section">
+        <h4>📚 Course Information</h4>
+        <div class="info-grid">
+          <div class="info-item">
+            <label>Course Code:</label>
+            <span id="panelCourseCode"></span>
+          </div>
+          <div class="info-item">
+            <label>Course Name:</label>
+            <span id="panelCourseName"></span>
+          </div>
+          <div class="info-item">
+            <label>Instructor:</label>
+            <span id="panelInstructor"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="submission-details-section">
+        <h4>📊 Plagiarism Analysis</h4>
+        <div class="similarity-display">
+          <div class="similarity-ring">
+            <svg viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="10"/>
+              <circle id="similarityCircle" cx="50" cy="50" r="45" fill="none" stroke="var(--accent1)" stroke-width="10" 
+                      stroke-dasharray="283" stroke-dashoffset="283" 
+                      transform="rotate(-90 50 50)" stroke-linecap="round"/>
+            </svg>
+            <div class="similarity-percentage" id="panelSimilarity">0%</div>
+          </div>
+          <div class="similarity-info">
+            <div class="info-item">
+              <label>Status:</label>
+              <span id="panelStatus" class="status-badge"></span>
+            </div>
+            <div class="info-item" style="margin-top: 15px;">
+              <label>Risk Level:</label>
+              <span id="panelRiskLevel"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-actions">
+        <button class="btn primary" onclick="downloadSubmission()">
+          <i class="fas fa-download"></i> Download Document
+        </button>
+        <button class="btn danger" onclick="deleteCurrentSubmission()">
+          <i class="fas fa-trash"></i> Delete Submission
+        </button>
       </div>
     </div>
   </div>
 </div>
+
+<!-- Panel Overlay -->
+<div id="panelOverlay" class="panel-overlay" onclick="closeAllPanels()"></div>
 
 <style>
 .search-filter-bar {
@@ -208,25 +291,187 @@
   color: #74b9ff;
 }
 
-.submission-details {
-  background: rgba(255,255,255,0.03);
-  padding: 20px;
-  border-radius: 10px;
+/* Side Panel Styles */
+.side-panel {
+  position: fixed;
+  top: 0;
+  right: -600px;
+  width: 600px;
+  height: 100vh;
+  background: linear-gradient(180deg, rgba(20,30,60,0.98), rgba(10,20,40,0.98));
+  backdrop-filter: blur(10px);
+  box-shadow: -5px 0 25px rgba(0,0,0,0.5);
+  transition: right 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+  z-index: 2000;
+  overflow-y: auto;
 }
 
-.detail-row {
+.side-panel.open {
+  right: 0;
+}
+
+.side-panel-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.side-panel-header {
+  padding: 25px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
   display: flex;
   justify-content: space-between;
-  padding: 10px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  align-items: center;
+  background: rgba(0,198,255,0.05);
 }
 
-.detail-row:last-child {
-  border-bottom: none;
-}
-
-.detail-row strong {
+.side-panel-header h3 {
+  margin: 0;
   color: var(--accent1);
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.close-panel-btn {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 32px;
+  cursor: pointer;
+  transition: all 0.3s;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.close-panel-btn:hover {
+  background: rgba(255,90,107,0.2);
+  color: #ff5a6b;
+  transform: rotate(90deg);
+}
+
+.side-panel-body {
+  flex: 1;
+  padding: 25px;
+  overflow-y: auto;
+}
+
+.submission-details-section {
+  margin-bottom: 25px;
+  padding: 20px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.submission-details-section h4 {
+  color: var(--accent1);
+  margin-bottom: 15px;
+  font-size: 16px;
+}
+
+.info-grid {
+  display: grid;
+  gap: 15px;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.info-item label {
+  color: #a7b7d6;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.info-item span {
+  color: #fff;
+  font-size: 15px;
+}
+
+.similarity-display {
+  display: flex;
+  gap: 30px;
+  align-items: center;
+}
+
+.similarity-ring {
+  position: relative;
+  width: 140px;
+  height: 140px;
+}
+
+.similarity-ring svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(0deg);
+}
+
+.similarity-percentage {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--accent1);
+}
+
+.similarity-info {
+  flex: 1;
+}
+
+.panel-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.panel-actions .btn {
+  flex: 1;
+}
+
+/* Panel Overlay */
+.panel-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(2px);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s;
+  z-index: 1999;
+}
+
+.panel-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+@media (max-width: 768px) {
+  .side-panel {
+    width: 100%;
+    right: -100%;
+  }
+  
+  .similarity-display {
+    flex-direction: column;
+  }
 }
 </style>
 
@@ -396,7 +641,7 @@ function renderSubmissions() {
     
     const scoreClass = sub.similarity === null ? 'processing' 
       : sub.similarity <= 30 ? 'low'
-      : sub.similarity <= 60 ? 'medium' : 'high';
+      : sub.similarity <= 70 ? 'medium' : 'high';
     
     return `
       <tr data-student="${student?.name.toLowerCase() || ''}" 
@@ -469,50 +714,92 @@ function viewSubmissionDetails(submissionId) {
   const course = getCourseById(sub.courseId);
   const instructor = sub.instructorId ? getUserById(sub.instructorId) : null;
   
-  const scoreClass = sub.similarity === null ? 'processing' 
-    : sub.similarity <= 30 ? 'low'
-    : sub.similarity <= 60 ? 'medium' : 'high';
+  // Fill panel data
+  document.getElementById('panelSubmissionId').textContent = '#' + sub.id;
+  document.getElementById('panelDocTitle').textContent = sub.title;
+  document.getElementById('panelFilename').textContent = sub.filename;
+  document.getElementById('panelSubmitDate').textContent = new Date(sub.uploadDate).toLocaleString();
   
-  document.getElementById('submissionDetailsContent').innerHTML = `
-    <div class="detail-row"><strong>Submission ID:</strong> <span>#${sub.id}</span></div>
-    <div class="detail-row"><strong>Student:</strong> <span>${student?.name || 'Unknown'}</span></div>
-    <div class="detail-row"><strong>Student Email:</strong> <span>${student?.email || 'N/A'}</span></div>
-    <div class="detail-row"><strong>Document Title:</strong> <span>${sub.title}</span></div>
-    <div class="detail-row"><strong>Filename:</strong> <span>${sub.filename}</span></div>
-    <div class="detail-row"><strong>Course:</strong> <span>${course?.code} - ${course?.name || 'N/A'}</span></div>
-    <div class="detail-row"><strong>Instructor:</strong> <span>${instructor?.name || 'None assigned'}</span></div>
-    <div class="detail-row"><strong>Submitted:</strong> <span>${new Date(sub.uploadDate).toLocaleString()}</span></div>
-    <div class="detail-row">
-      <strong>Similarity Score:</strong> 
-      <span class="similarity-score ${scoreClass}">
-        ${sub.similarity !== null ? sub.similarity.toFixed(1) + '%' : 'Processing...'}
-      </span>
-    </div>
-    <div class="detail-row">
-      <strong>Status:</strong> 
-      <span class="status-badge ${sub.status}">${sub.status.charAt(0).toUpperCase() + sub.status.slice(1)}</span>
-    </div>
-  `;
+  document.getElementById('panelStudentName').textContent = student?.name || 'Unknown';
+  document.getElementById('panelStudentEmail').textContent = student?.email || 'N/A';
   
-  document.getElementById('submissionModal').style.display = 'flex';
+  document.getElementById('panelCourseCode').textContent = course?.code || 'N/A';
+  document.getElementById('panelCourseName').textContent = course?.name || 'N/A';
+  document.getElementById('panelInstructor').textContent = instructor?.name || 'None assigned';
+  
+  // Update similarity ring
+  const similarity = sub.similarity !== null ? sub.similarity : 0;
+  const circumference = 2 * Math.PI * 45; // radius = 45
+  const offset = circumference - (similarity / 100) * circumference;
+  
+  const circle = document.getElementById('similarityCircle');
+  circle.style.strokeDashoffset = offset;
+  
+  // Color based on risk
+  if (sub.similarity === null) {
+    circle.style.stroke = '#74b9ff';
+  } else if (similarity <= 30) {
+    circle.style.stroke = '#7ef3b6';
+  } else if (similarity <= 70) {
+    circle.style.stroke = '#ffa94d';
+  } else {
+    circle.style.stroke = '#ff9696';
+  }
+  
+  document.getElementById('panelSimilarity').textContent = sub.similarity !== null ? sub.similarity.toFixed(1) + '%' : 'Processing...';
+  
+  // Status badge
+  const statusBadge = document.getElementById('panelStatus');
+  statusBadge.textContent = sub.status.charAt(0).toUpperCase() + sub.status.slice(1);
+  statusBadge.className = 'status-badge ' + sub.status;
+  
+  // Risk level
+  let riskText = 'Processing';
+  let riskColor = '#74b9ff';
+  if (sub.similarity !== null) {
+    if (similarity <= 30) {
+      riskText = 'Low Risk ✅';
+      riskColor = '#7ef3b6';
+    } else if (similarity <= 70) {
+      riskText = 'Medium Risk ⚠️';
+      riskColor = '#ffa94d';
+    } else {
+      riskText = 'High Risk 🚨';
+      riskColor = '#ff9696';
+    }
+  }
+  document.getElementById('panelRiskLevel').innerHTML = `<span style="color: ${riskColor}; font-weight: 600;">${riskText}</span>`;
+  
+  openPanel('submissionPanel');
 }
 
-function closeSubmissionModal() {
-  document.getElementById('submissionModal').style.display = 'none';
+function closeSubmissionPanel() {
+  closePanel('submissionPanel');
   currentSubmissionId = null;
 }
 
-function deleteSubmission() {
+function downloadSubmission() {
+  const sub = getSubmissionById(currentSubmissionId);
+  if (!sub) return;
+  
+  // Simulate download (since this is frontend only)
+  alert(`📥 Downloading: ${sub.filename}\n\nNote: This is a simulated download for demonstration purposes.`);
+  
+  // In a real application, you would:
+  // window.location.href = '/download/' + sub.id;
+}
+
+function deleteCurrentSubmission() {
   if (!currentSubmissionId) return;
   
-  if (!confirm('Are you sure you want to delete this submission?')) return;
+  if (!confirm('Are you sure you want to delete this submission? This action cannot be undone.')) return;
   
   const index = submissions.findIndex(s => s.id === currentSubmissionId);
   if (index !== -1) {
     submissions.splice(index, 1);
     saveSubmissions();
     renderSubmissions();
-    closeSubmissionModal();
+    closeSubmissionPanel();
     alert('✅ Submission deleted successfully!');
   }
 }
@@ -557,10 +844,25 @@ function updateDashboard() {
   }
 }
 
-// Close modal when clicking outside
-window.onclick = function(event) {
-  if (event.target.id === 'submissionModal') {
-    closeSubmissionModal();
-  }
+// Panel helper functions
+function openPanel(panelId) {
+  document.getElementById(panelId).classList.add('open');
+  document.getElementById('panelOverlay').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closePanel(panelId) {
+  document.getElementById(panelId).classList.remove('open');
+  document.getElementById('panelOverlay').classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+function closeAllPanels() {
+  document.querySelectorAll('.side-panel').forEach(panel => {
+    panel.classList.remove('open');
+  });
+  document.getElementById('panelOverlay').classList.remove('active');
+  document.body.style.overflow = '';
+  currentSubmissionId = null;
 }
 </script>
