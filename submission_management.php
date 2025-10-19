@@ -19,7 +19,7 @@
         min-height: 100vh;
     }
 
-    /* ===== Sliding Sidebar ===== */
+    /* ===== Sidebar ===== */
     .sidebar {
         width: 80px;
         background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%);
@@ -32,47 +32,9 @@
         left: 0;
         top: 0;
         height: 100vh;
-        transition: width 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
         overflow: hidden;
         z-index: 1000;
         box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-    }
-
-    .sidebar:hover {
-        width: 250px;
-    }
-
-    .sidebar-header {
-        padding: 0 20px;
-        margin-bottom: 30px;
-        white-space: nowrap;
-    }
-
-    .sidebar-header h2 {
-        font-size: 20px;
-        font-weight: 600;
-        opacity: 0;
-        transition: opacity 0.3s ease 0.1s;
-    }
-
-    .sidebar:hover .sidebar-header h2 {
-        opacity: 1;
-    }
-
-    .sidebar-header .icon-only {
-        display: block;
-        text-align: center;
-        font-size: 24px;
-        transition: opacity 0.2s;
-    }
-
-    .sidebar:hover .sidebar-header .icon-only {
-        opacity: 0;
-        display: none;
-    }
-
-    .sidebar-nav {
-        flex: 1;
     }
 
     .sidebar a {
@@ -80,30 +42,14 @@
         text-decoration: none;
         display: flex;
         align-items: center;
-        padding: 15px 20px;
-        margin: 5px 10px;
+        justify-content: center;
+        padding: 18px 0;
+        margin: 10px;
         border-radius: 12px;
         transition: all 0.3s;
         cursor: pointer;
-        font-size: 15px;
-        position: relative;
-        white-space: nowrap;
-    }
-
-    .sidebar a i {
         font-size: 20px;
-        min-width: 20px;
-        text-align: center;
-    }
-
-    .sidebar a .link-text {
-        margin-left: 15px;
-        opacity: 0;
-        transition: opacity 0.3s ease 0.1s;
-    }
-
-    .sidebar:hover a .link-text {
-        opacity: 1;
+        position: relative;
     }
 
     .sidebar a:hover, .sidebar a.active {
@@ -120,11 +66,11 @@
         background-color: #ef4444;
     }
 
-    /* Tooltip for collapsed state */
+    /* ===== Tooltip ===== */
     .sidebar a::before {
         content: attr(data-tooltip);
         position: absolute;
-        left: 80px;
+        left: 90px;
         background: #1e3a8a;
         color: white;
         padding: 8px 12px;
@@ -137,7 +83,7 @@
         box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     }
 
-    .sidebar:not(:hover) a:hover::before {
+    .sidebar a:hover::before {
         opacity: 1;
     }
 
@@ -146,9 +92,8 @@
         flex: 1;
         margin-left: 80px;
         padding: 40px;
-        transition: margin-left 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-        position: relative;
         background: #f9fafc;
+        transition: margin-left 0.3s;
     }
 
     h1 {
@@ -214,8 +159,14 @@
         background-color: white;
         padding: 25px;
         border-radius: 12px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         text-align: center;
+        transition: all 0.4s;
+    }
+
+    .results-box.active {
+        border-top: 5px solid #2563eb;
+        transform: translateY(-3px);
     }
 
     .ring-container {
@@ -244,31 +195,49 @@
         font-weight: 600;
     }
 
-    .percent-breakdown {
-        text-align: left;
-        margin-top: 20px;
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
     }
 
-    .percent-breakdown div {
-        margin: 6px 0;
-        display: flex;
-        align-items: center;
+    .percent-breakdown {
+        text-align: left;
+        margin-top: 10px;
+        padding: 0 20px;
+        font-size: 15px;
     }
 
     .indicator-box {
-        width: 15px;
-        height: 15px;
-        border-radius: 3px;
+        display: inline-block;
+        width: 12px;
+        height: 12px;
         margin-right: 8px;
+        border-radius: 3px;
     }
 
     .unique-box { background-color: #22c55e; }
     .exact-box { background-color: #ef4444; }
     .partial-box { background-color: #facc15; }
 
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+    /* ===== Report Section ===== */
+    .report-section {
+        margin-top: 20px;
+        padding: 15px;
+        border-top: 1px solid #e2e8f0;
+        display: none;
+    }
+
+    .report-section.active {
+        display: block;
+    }
+
+    .report-section p {
+        margin-bottom: 10px;
+    }
+
+    .download-btn {
+        margin-top: 10px;
+        background-color: #22c55e;
     }
 
     /* ===== Chat Box ===== */
@@ -329,193 +298,98 @@
         background: #1e40af;
     }
 
-    .chat-open {
-        bottom: 30px;
-    }
+    .chat-open { bottom: 30px; }
 
-    /* ===== Page Sections ===== */
-    .page {
-        display: none;
-    }
-
-    .page.active {
-        display: block;
-    }
-
-    .history-item, .trash-item {
-        background: white;
-        border-left: 4px solid #2563eb;
-        margin-bottom: 10px;
-        padding: 15px;
-        border-radius: 8px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-
-    .history-item h3, .trash-item h3 {
-        color: #1e3a8a;
-        font-size: 16px;
-        margin-bottom: 6px;
-    }
-
-    .history-item p, .trash-item p {
-        color: #475569;
-        font-size: 14px;
-    }
-
-    /* Mobile Toggle Button */
-    .mobile-toggle {
-        display: none;
-        position: fixed;
-        top: 20px;
-        left: 20px;
-        z-index: 1001;
-        background: #1e3a8a;
-        color: white;
-        border: none;
-        padding: 12px 15px;
-        border-radius: 10px;
-        cursor: pointer;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    }
-
-    .mobile-toggle i {
-        font-size: 20px;
-    }
-
-    @media (max-width: 900px) {
-        .content-grid {
-            grid-template-columns: 1fr;
-        }
-        
-        .sidebar {
-            transform: translateX(-100%);
-        }
-        
-        .sidebar.mobile-active {
-            transform: translateX(0);
-            width: 250px;
-        }
-        
-        .main-content {
-            margin-left: 0;
-        }
-        
-        .mobile-toggle {
-            display: block;
-        }
-    }
+    .page { display: none; }
+    .page.active { display: block; }
 </style>
 </head>
 <body>
 
-    <!-- Mobile Toggle Button -->
-    <button class="mobile-toggle" onclick="toggleMobileSidebar()">
-        <i class="fas fa-bars"></i>
-    </button>
-
-    <div class="sidebar" id="sidebar">
-        <div>
-            <div class="sidebar-header">
-                <div class="icon-only">👤</div>
-                <h2>Student Portal</h2>
-            </div>
-            
-            <div class="sidebar-nav">
-                <a id="homeBtn" class="active" data-tooltip="Home">
-                    <i class="fas fa-home"></i>
-                    <span class="link-text">Home</span>
-                </a>
-                <a id="chatToggle" data-tooltip="Chat">
-                    <i class="fas fa-comments"></i>
-                    <span class="link-text">Chat</span>
-                </a>
-                <a id="historyBtn" data-tooltip="Past History">
-                    <i class="fas fa-history"></i>
-                    <span class="link-text">Past History</span>
-                </a>
-                <a id="trashBtn" data-tooltip="Trash">
-                    <i class="fas fa-trash"></i>
-                    <span class="link-text">Trash</span>
-                </a>
-            </div>
-        </div>
-        
-        <a href="#" class="logout" data-tooltip="Logout">
-            <i class="fas fa-sign-out-alt"></i>
-            <span class="link-text">Logout</span>
-        </a>
+<div class="sidebar">
+    <div>
+        <a id="homeBtn" data-tooltip="Home"><i class="fas fa-home"></i></a>
+        <a id="chatToggle" data-tooltip="Chat"><i class="fas fa-comments"></i></a>
+        <a id="historyBtn" data-tooltip="Past History"><i class="fas fa-history"></i></a>
+        <a id="trashBtn" data-tooltip="Trash"><i class="fas fa-trash"></i></a>
     </div>
+    <a href="#" class="logout" data-tooltip="Logout"><i class="fas fa-sign-out-alt"></i></a>
+</div>
 
-    <div class="main-content">
-        <!-- Submission Page -->
-        <div id="mainPage" class="page active">
-            <h1>Plagiarism Detection</h1>
-            <div class="content-grid">
-                <div class="submission-box">
-                    <h2>Submit Your Work</h2>
-                    <select id="submissionType">
-                        <option value="general">General Submission</option>
-                        <option value="specific">Specific Teacher</option>
+<div class="main-content">
+    <!-- Submission Page -->
+    <div id="mainPage" class="page active">
+        <h1>Plagiarism Detection</h1>
+        <div class="content-grid">
+            <div class="submission-box">
+                <h2>Submit Your Work</h2>
+                <select id="submissionType">
+                    <option value="general">General Submission</option>
+                    <option value="specific">Specific Teacher</option>
+                </select>
+
+                <div id="teacherDropdown" style="display:none;">
+                    <select id="teacherSelect">
+                        <option value="">-- Select a Teacher --</option>
+                        <option value="Mr. Ahmed">Mr. Ahmed</option>
+                        <option value="Ms. Fatma">Ms. Fatma</option>
+                        <option value="Dr. Khaled">Dr. Khaled</option>
                     </select>
-
-                    <div id="teacherDropdown" style="display:none;">
-                        <select id="teacherSelect">
-                            <option value="">-- Select a Teacher --</option>
-                            <option value="Mr. Ahmed">Mr. Ahmed</option>
-                            <option value="Ms. Fatma">Ms. Fatma</option>
-                            <option value="Dr. Khaled">Dr. Khaled</option>
-                        </select>
-                    </div>
-
-                    <textarea id="textInput" placeholder="Enter your text here..."></textarea>
-                    <input type="file" id="fileInput" accept=".pdf, .doc, .docx">
-                    <button onclick="checkPlagiarism()">Submit</button>
                 </div>
 
-                <div class="results-box">
-                    <h2>Results</h2>
-                    <div class="ring-container">
-                        <div class="ring"></div>
-                        <div class="ring-value" id="ringValue">0%</div>
-                    </div>
-                    <div class="percent-breakdown">
-                        <div><div class="indicator-box unique-box"></div> Unique: <span id="uniqueValue">0%</span></div>
-                        <div><div class="indicator-box exact-box"></div> Exact Match: <span id="exactValue">0%</span></div>
-                        <div><div class="indicator-box partial-box"></div> Partial Match: <span id="partialValue">0%</span></div>
-                    </div>
+                <textarea id="textInput" placeholder="Enter your text here..."></textarea>
+                <input type="file" id="fileInput" accept=".pdf, .doc, .docx">
+                <button id="submitBtn" onclick="checkPlagiarism()">Submit</button>
+            </div>
+
+            <div class="results-box" id="resultsBox">
+                <h2>Results</h2>
+                <div class="ring-container">
+                    <div class="ring"></div>
+                    <div class="ring-value" id="ringValue">0%</div>
+                </div>
+                <div class="percent-breakdown">
+                    <div><div class="indicator-box unique-box"></div> Unique: <span id="uniqueValue">0%</span></div>
+                    <div><div class="indicator-box exact-box"></div> Exact Match: <span id="exactValue">0%</span></div>
+                    <div><div class="indicator-box partial-box"></div> Partial Match: <span id="partialValue">0%</span></div>
+                </div>
+                <div class="report-section" id="reportSection">
+                    <p><strong>Generated Report:</strong> Your document has been analyzed. A downloadable report is available below.</p>
+                    <button class="download-btn" onclick="downloadReport()">Download Report</button>
                 </div>
             </div>
         </div>
-
-        <!-- Past History Page -->
-        <div id="historyPage" class="page">
-            <h1>📜 Past History</h1>
-            <div class="history-item"><h3>Submission #1</h3><p>Plagiarism Score: 45%</p></div>
-            <div class="history-item"><h3>Submission #2</h3><p>Plagiarism Score: 20%</p></div>
-        </div>
-
-        <!-- Trash Page -->
-        <div id="trashPage" class="page">
-            <h1>🗑 Trash</h1>
-            <div class="trash-item"><h3>Old File - Removed</h3><p>Deleted on: 12 Oct 2025</p></div>
-            <div class="trash-item"><h3>Duplicate Submission</h3><p>Deleted on: 10 Oct 2025</p></div>
-        </div>
     </div>
 
-    <!-- Chat Box -->
-    <div class="chat-box" id="chatBox">
-        <div class="chat-header">
-            Student Chat
-            <span style="cursor:pointer;" onclick="toggleChat()">✖</span>
-        </div>
-        <div class="chat-messages" id="chatMessages">
-            <p><strong>Teacher:</strong> Hey, how can I help you?</p>
-        </div>
-        <div class="chat-input">
-            <input type="text" id="chatInput" placeholder="Type a message...">
-            <button onclick="sendMessage()">Send</button>
-        </div>
+    <!-- Past History Page -->
+    <div id="historyPage" class="page">
+        <h1>📜 Past History</h1>
+        <div class="history-item"><h3>Submission #1</h3><p>Plagiarism Score: 45%</p></div>
+        <div class="history-item"><h3>Submission #2</h3><p>Plagiarism Score: 20%</p></div>
     </div>
+
+    <!-- Trash Page -->
+    <div id="trashPage" class="page">
+        <h1>🗑️ Trash</h1>
+        <div class="trash-item"><h3>Old File - Removed</h3><p>Deleted on: 12 Oct 2025</p></div>
+        <div class="trash-item"><h3>Duplicate Submission</h3><p>Deleted on: 10 Oct 2025</p></div>
+    </div>
+</div>
+
+<!-- Chat Box -->
+<div class="chat-box" id="chatBox">
+    <div class="chat-header">
+        Student Chat
+        <span style="cursor:pointer;" onclick="toggleChat()">✖</span>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+        <p><strong>Teacher:</strong> Hey, how can I help you?</p>
+    </div>
+    <div class="chat-input">
+        <input type="text" id="chatInput" placeholder="Type a message...">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+</div>
 
 <script>
 function checkPlagiarism() {
@@ -529,6 +403,32 @@ function checkPlagiarism() {
     document.getElementById("uniqueValue").textContent = unique + "%";
     document.getElementById("exactValue").textContent = exact + "%";
     document.getElementById("partialValue").textContent = partial + "%";
+
+    const resultsBox = document.getElementById("resultsBox");
+    const reportSection = document.getElementById("reportSection");
+    const submitBtn = document.getElementById("submitBtn");
+
+    resultsBox.classList.add("active");
+    reportSection.classList.add("active");
+    submitBtn.textContent = "Resubmit";
+}
+
+function downloadReport() {
+    const report = `
+Plagiarism Detection Report
+---------------------------
+Plagiarised: ${document.getElementById("ringValue").textContent}
+Unique: ${document.getElementById("uniqueValue").textContent}
+Exact Match: ${document.getElementById("exactValue").textContent}
+Partial Match: ${document.getElementById("partialValue").textContent}
+
+Generated on: ${new Date().toLocaleString()}
+    `;
+    const blob = new Blob([report], { type: "text/plain" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "Plagiarism_Report.txt";
+    link.click();
 }
 
 // ===== Chat Toggle =====
@@ -540,7 +440,7 @@ function toggleChat() {
     chatBox.classList.toggle("chat-open");
 }
 
-// ===== Simple Chat (no AI) =====
+// ===== Chat =====
 function sendMessage() {
     const input = document.getElementById("chatInput");
     const message = input.value.trim();
@@ -548,7 +448,7 @@ function sendMessage() {
 
     const messages = document.getElementById("chatMessages");
     const userMsg = document.createElement("p");
-    userMsg.innerHTML = <strong>You:</strong> ${message};
+    userMsg.innerHTML = `<strong>You:</strong> ${message}`;
     messages.appendChild(userMsg);
 
     input.value = "";
@@ -565,54 +465,19 @@ document.getElementById("historyBtn").addEventListener("click", () => showPage("
 document.getElementById("trashBtn").addEventListener("click", () => showPage("trash"));
 
 function showPage(page) {
-    // Remove active class from all links
-    document.querySelectorAll('.sidebar a').forEach(link => {
-        link.classList.remove('active');
-    });
-    
-    // Hide all pages
     mainPage.classList.remove("active");
     historyPage.classList.remove("active");
     trashPage.classList.remove("active");
 
-    // Show selected page and activate link
-    if (page === "history") {
-        historyPage.classList.add("active");
-        document.getElementById("historyBtn").classList.add("active");
-    } else if (page === "trash") {
-        trashPage.classList.add("active");
-        document.getElementById("trashBtn").classList.add("active");
-    } else {
-        mainPage.classList.add("active");
-        document.getElementById("homeBtn").classList.add("active");
-    }
+    if (page === "history") historyPage.classList.add("active");
+    else if (page === "trash") trashPage.classList.add("active");
+    else mainPage.classList.add("active");
 }
 
-// ===== Teacher Dropdown Visibility =====
+// ===== Teacher Dropdown =====
 document.getElementById("submissionType").addEventListener("change", function() {
     const teacherDropdown = document.getElementById("teacherDropdown");
-    if (this.value === "specific") {
-        teacherDropdown.style.display = "block";
-    } else {
-        teacherDropdown.style.display = "none";
-    }
-});
-
-// ===== Mobile Sidebar Toggle =====
-function toggleMobileSidebar() {
-    document.getElementById('sidebar').classList.toggle('mobile-active');
-}
-
-// Close mobile sidebar when clicking outside
-document.addEventListener('click', function(event) {
-    const sidebar = document.getElementById('sidebar');
-    const toggle = document.querySelector('.mobile-toggle');
-    
-    if (window.innerWidth <= 900) {
-        if (!sidebar.contains(event.target) && !toggle.contains(event.target)) {
-            sidebar.classList.remove('mobile-active');
-        }
-    }
+    teacherDropdown.style.display = (this.value === "specific") ? "block" : "none";
 });
 </script>
 
