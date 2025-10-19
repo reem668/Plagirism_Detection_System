@@ -2,7 +2,7 @@
 // signup_process.php
 session_start();
 
-include 'db.php'; // Include your database connection file
+include 'includes/db.php'; // Include your database connection file
 
 // --- Get form inputs safely ---
 $name = trim($_POST['name']);

@@ -2,7 +2,7 @@
 $host = "localhost";
 $user = "root"; 
 $pass = "";
-$dbname = "plagiarism_system"; 
+$dbname = "pal"; 
 
 $conn = new mysqli($host, $user, $pass, $dbname);
 
