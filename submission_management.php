@@ -37,7 +37,6 @@
         box-shadow: 2px 0 10px rgba(0,0,0,0.1);
     }
 
-    .sidebar:hover {
     .sidebar a {
         color: white;
         text-decoration: none;
@@ -307,42 +306,12 @@
 </head>
 <body>
 
-    <!-- Mobile Toggle Button -->
-    <button class="mobile-toggle" onclick="toggleMobileSidebar()">
-        <i class="fas fa-bars"></i>
-    </button>
-
-    <div class="sidebar" id="sidebar">
-        <div>
-            <div class="sidebar-header">
-                <div class="icon-only">👤</div>
-                <h2>Student Portal</h2>
-            </div>
-            
-            <div class="sidebar-nav">
-                <a id="homeBtn" class="active" data-tooltip="Home">
-                    <i class="fas fa-home"></i>
-                    <span class="link-text">Home</span>
-                </a>
-                <a id="chatToggle" data-tooltip="Chat">
-                    <i class="fas fa-comments"></i>
-                    <span class="link-text">Chat</span>
-                </a>
-                <a id="historyBtn" data-tooltip="Past History">
-                    <i class="fas fa-history"></i>
-                    <span class="link-text">Past History</span>
-                </a>
-                <a id="trashBtn" data-tooltip="Trash">
-                    <i class="fas fa-trash"></i>
-                    <span class="link-text">Trash</span>
-                </a>
-            </div>
-        </div>
-        
-        <a href="#" class="logout" data-tooltip="Logout">
-            <i class="fas fa-sign-out-alt"></i>
-            <span class="link-text">Logout</span>
-        </a>
+<div class="sidebar">
+    <div>
+        <a id="homeBtn" data-tooltip="Home"><i class="fas fa-home"></i></a>
+        <a id="chatToggle" data-tooltip="Chat"><i class="fas fa-comments"></i></a>
+        <a id="historyBtn" data-tooltip="Past History"><i class="fas fa-history"></i></a>
+        <a id="trashBtn" data-tooltip="Trash"><i class="fas fa-trash"></i></a>
     </div>
     <a href="#" class="logout" data-tooltip="Logout"><i class="fas fa-sign-out-alt"></i></a>
 </div>
