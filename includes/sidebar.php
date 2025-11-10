@@ -1,7 +1,8 @@
 <?php
-session_start();
-$current = $_GET['page'] ?? 'home';
-$adminName = $_SESSION['admin_name'] ?? 'Admin User';
+// Get admin name from session, with fallback
+$adminName = $_SESSION['user_name'] ?? 'Admin';
+$adminEmail = $_SESSION['user_email'] ?? 'admin@example.com';
+$current = $page ?? 'home'; // Get current page
 ?>
 <aside class="sidebar" id="sidebar">
   <div class="logo"> ⚙️ </div>
@@ -36,8 +37,9 @@ $adminName = $_SESSION['admin_name'] ?? 'Admin User';
     </a>
   </nav>
   <div class="logout-section">
-    <a href="logout.php" class="logout-btn">
-      <i class="fas fa-sign-out-alt"></i><span>Logout</span>
+    <a href="logout.php" class="btn-logout">
+      <i class="fas fa-sign-out-alt"></i>
+      
     </a>
   </div>
 </aside>

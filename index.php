@@ -1,4 +1,12 @@
 <?php
+session_start();
+
+// Check if user is admin
+if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+    header("Location: signup.php");
+    exit();
+}
+
 $page = $_GET['page'] ?? 'home';
 
 // Validate page
@@ -27,7 +35,7 @@ if (!in_array($page, $allowed_pages)) {
       if (file_exists($page_file)) {
           include $page_file;
       } else {
-          echo "<div style='padding:40px;text-align:center;color:#fff;'>";
+          echo "<div style='padding:40px;text-align:center;color:#666;'>";
           echo "<h2>⚠️ Page Not Found</h2>";
           echo "<p>The page <strong>{$page}</strong> doesn't exist.</p>";
           echo "<a href='index.php?page=home' class='btn primary'>Go to Home</a>";
