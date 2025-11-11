@@ -265,3 +265,4 @@ window.saveWithUpdate = function(key, data) {
 
 console.log('📊 Global Data Management initialized');
 console.log('📈 Current Stats:', window.AppData.getStats());
+

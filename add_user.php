@@ -2,7 +2,7 @@
 include 'includes/db.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-  header("Location: index.php?page=user_management");
+  header("Location: admin.php?page=user_management");
   exit;
 }
 
@@ -11,7 +11,7 @@ $email = trim($_POST['email']);
 $role = trim($_POST['role']);
 
 if (empty($name) || empty($email) || empty($role)) {
-  header("Location: index.php?page=user_management&error=missing");
+  header("Location: admin.php?page=user_management&error=missing");
   exit;
 }
 
@@ -25,6 +25,6 @@ $stmt->bind_param("ssssss", $name, $email, $role, $status, $created_at, $deleted
 $stmt->execute();
 $stmt->close();
 
-header("Location: index.php?page=user_management&success=1");
+header("Location: admin.php?page=user_management&success=1"); // CHANGED from index.php
 exit;
 ?>

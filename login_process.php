@@ -50,7 +50,7 @@ $_SESSION['user_role'] = $user['role'];
 
 // --- 6. Redirect based on role ---
 if ($user['role'] === 'admin') {
-    echo "<script>alert('Welcome Admin!'); window.location.href='index.php';</script>";
+    echo "<script>alert('Welcome Admin!'); window.location.href='admin.php';</script>";
 } elseif ($user['role'] === 'instructor') {
     echo "<script>alert('Welcome Instructor!'); window.location.href='Instructor.php';</script>";
 } else {

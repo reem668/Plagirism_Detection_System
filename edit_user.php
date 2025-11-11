@@ -3,7 +3,7 @@ include 'includes/db.php';
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if ($id <= 0) {
-  header("Location: index.php?page=user_management");
+  header("Location: admin.php?page=user_management");
   exit;
 }
 
@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->bind_param("ssssi", $name, $email, $role, $status, $id);
     $stmt->execute();
     $stmt->close();
-    header("Location: index.php?page=user_management&updated=1");
+    header("Location: admin.php?page=user_management&updated=1");
     exit;
   }
 }
@@ -34,7 +34,7 @@ $stmt->close();
 <head>
   <meta charset="UTF-8">
   <title>Edit User</title>
-  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/admin.css">
 </head>
 <body>
   <div class="edit-container">
@@ -64,7 +64,7 @@ $stmt->close();
       </select>
 
       <button type="submit" class="btn primary">Save Changes</button>
-      <a href="index.php?page=user_management" class="btn">Cancel</a>
+      <a href="admin.php?page=user_management" class="btn">Cancel</a>
     </form>
   </div>
 </body>

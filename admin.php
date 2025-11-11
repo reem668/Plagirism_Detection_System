@@ -7,12 +7,12 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
     exit();
 }
 
-$page = $_GET['page'] ?? 'home';
+$page = $_GET['page'] ?? 'dashboard';
 
 // Validate page
-$allowed_pages = ['home', 'user_management', 'course_management', 'submissions_overview', 'system_settings'];
+$allowed_pages = ['dashboard', 'user_management', 'course_management', 'submissions_overview', 'system_settings'];
 if (!in_array($page, $allowed_pages)) {
-    $page = 'home';
+    $page = 'dashboard';
 }
 ?>
 <!DOCTYPE html>
@@ -25,8 +25,9 @@ if (!in_array($page, $allowed_pages)) {
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
 </head>
 <body>
-  <?php include 'includes/header.php'; ?>
-  <?php include 'includes/sidebar.php'; ?>
+  <?php include 'includes/admin_header.php'; ?>
+  <?php include 'includes/admin_sidebar.php'; ?> 
+
 
   <main class="main-content" id="mainContent">
     <?php
@@ -38,12 +39,12 @@ if (!in_array($page, $allowed_pages)) {
           echo "<div style='padding:40px;text-align:center;color:#666;'>";
           echo "<h2>⚠️ Page Not Found</h2>";
           echo "<p>The page <strong>{$page}</strong> doesn't exist.</p>";
-          echo "<a href='index.php?page=home' class='btn primary'>Go to Home</a>";
+        echo "<a href='admin.php?page=dashboard' class='btn primary'>Go to Dashboard</a>"; 
           echo "</div>";
       }
     ?>
   </main>
-  
+ 
   <script src="assets/js/admin.js"></script>
 </body>
 </html>
