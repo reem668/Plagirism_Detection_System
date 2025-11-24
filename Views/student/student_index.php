@@ -1,15 +1,15 @@
 <?php
 session_start();
 
-require_once __DIR__ . '/../../Helpers/Csrf.php';
-require_once __DIR__ . '/../../Controllers/SubmissionController.php';
+require_once __DIR__ . '../../../Helpers/Csrf.php';
+require_once __DIR__ . '../../../Controllers/SubmissionController.php';
 
 use Controllers\SubmissionController;
 use Helpers\Csrf;
 
 // Only students can access
 if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'student') {
-    header("Location: ../../signup.php");
+    header("Location: ../signup.php");
     exit();
 }
 
