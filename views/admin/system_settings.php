@@ -1,7 +1,12 @@
+<?php
+require_once dirname(__DIR__, 2) . '/Helpers/Csrf.php';
+?>
 <section class="settings">
   <h2>System Settings ⚙️</h2>
 
   <div id="settingsNotification" class="notice" style="display:none;"></div>
+
+  <input type="hidden" id="csrfToken" value="<?= \Helpers\Csrf::token() ?>">
 
   <form id="settingsForm" onsubmit="saveSettings(event)" class="settings-form">
     <label>Max Upload File Size (MB)</label>
