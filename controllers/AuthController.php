@@ -1,6 +1,6 @@
 <?php
 /**
- * Authentication Controller - Handles Login & Signup
+ * Authentication Controller - Handles Login, Signup & Forgot Password
  */
 session_start();
 
@@ -58,17 +58,17 @@ class AuthController {
         $_SESSION['user_email'] = $this->user->getEmail();
         $_SESSION['user_role'] = $this->user->getRole();
         
-       switch ($this->user->getRole()) {
-    case 'admin':
-        $this->alertRedirect("Welcome Admin!", "../admin.php");
-        break;
-    case 'instructor':
-        $this->alertRedirect("Welcome Instructor!", "/Plagirism_Detection_System/Views/instructor/Instructor.php");
-        break;
-    default:
-        $this->alertRedirect("Welcome Student!", "/Plagirism_Detection_System/Views/student/student_index.php");
-        break;
-}
+        switch ($this->user->getRole()) {
+            case 'admin':
+                $this->alertRedirect("Welcome Admin!", "../admin.php");
+                break;
+            case 'instructor':
+                $this->alertRedirect("Welcome Instructor!", "/Plagirism_Detection_System/Views/instructor/Instructor.php");
+                break;
+            default:
+                $this->alertRedirect("Welcome Student!", "/Plagirism_Detection_System/Views/student/student_index.php");
+                break;
+        }
     }
     
     /**
@@ -141,6 +141,55 @@ class AuthController {
     }
     
     /**
+     * Handle Forgot Password
+     */
+    public function forgotPassword() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header("Location: ../signup.php");
+            exit();
+        }
+        
+        $name = trim($_POST['name']);
+        $email = trim($_POST['email']);
+        $mobile = trim($_POST['mobile']);
+        $password = $_POST['password'];
+        $confirmPassword = $_POST['confirm-password'];
+        
+        // Basic validation
+        if (empty($name) || empty($email) || empty($mobile)) {
+            $this->alertBack("Please fill in all fields.");
+        }
+        
+        // Validate phone
+        if (!preg_match("/^\d{11}$/", $mobile)) {
+            $this->alertBack("Please enter a valid 11-digit mobile number.");
+        }
+        
+        // Verify user exists and information matches
+        if (!$this->user->verifyUserInfo($name, $email, $mobile)) {
+            $this->alertBack("Account information does not match our records. Please check your name, email, and mobile number.");
+        }
+        
+        // Validate password strength
+        if (!preg_match("/^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*\/])[A-Za-z\d!@#$%^&*\/]{8,}$/", $password)) {
+            $this->alertBack("Password must have at least 8 chars, uppercase, number, and special symbol.");
+        }
+        
+        // Confirm password match
+        if ($password !== $confirmPassword) {
+            $this->alertBack("Passwords do not match.");
+        }
+        
+        // Update password in database
+        if ($this->user->updatePassword($email, $password)) {
+            header("Location: ../signup.php?reset=success");
+            exit();
+        } else {
+            $this->alertBack("Password reset failed. Please try again.");
+        }
+    }
+    
+    /**
      * Helper: Alert and go back
      */
     private function alertBack($message) {
@@ -167,6 +216,9 @@ switch ($action) {
         break;
     case 'signup':
         $controller->signup();
+        break;
+    case 'forgot_password':
+        $controller->forgotPassword();
         break;
     default:
         header("Location: ../signup.php");

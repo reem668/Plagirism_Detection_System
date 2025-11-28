@@ -8,29 +8,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
    <script>
       document.addEventListener("keydown", function(e) {
-      // Detect Ctrl + Shift + A
-  if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "x") {
-    e.preventDefault();
-    const adminBox = document.getElementById("admin-key-box");
-    
-    if (adminBox.style.display === "block") {
-      // Hide & clear the field
-      adminBox.style.display = "none";
-      document.getElementById("admin_key").value = "";
-    } else {
-      // Show the field
-      adminBox.style.display = "block";
-      document.getElementById("admin_key").focus();
+      // Detect Ctrl + Shift + X
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "x") {
+        e.preventDefault();
+        const adminBox = document.getElementById("admin-key-box");
+        
+        if (adminBox.style.display === "block") {
+          // Hide & clear the field
+          adminBox.style.display = "none";
+          document.getElementById("admin_key").value = "";
+        } else {
+          // Show the field
+          adminBox.style.display = "block";
+          document.getElementById("admin_key").focus();
+        }
+      }
+    });
+
+    // Handle forgot password link
+    function showForgotPassword(e) {
+      e.preventDefault();
+      document.getElementById('flip-forgot').checked = true;
     }
-  }
-});
+
+    function backToLogin(e) {
+      e.preventDefault();
+      document.getElementById('flip-forgot').checked = false;
+    }
 </script>
-
-
   </head>
   <body>
     <div class="container">
       <input type="checkbox" id="flip">
+      <input type="checkbox" id="flip-forgot">
+      
       <div class="cover">
         <div class="front">
           <img src="/Plagirism_Detection_System/storage/uploads/frontImg.jpg" alt="Front Image">
@@ -47,15 +58,17 @@
           </div>
         </div>
       </div>
+
       <div class="forms">
         <div class="form-content">
+          <!-- LOGIN FORM -->
           <div class="login-form">
             <div class="title">Login</div>
             <form action="Controllers/AuthController.php?action=login" method="post">
               <div class="input-boxes">
-                <div  id="admin-key-box" class="input-box admin-key" style="display:none;">
+                <div id="admin-key-box" class="input-box admin-key" style="display:none;">
                    <i class="fas fa-key"></i>
-                      <input type="text" id="admin_key" name="admin_key" placeholder="Enter Admin Secret Key">
+                   <input type="text" id="admin_key" name="admin_key" placeholder="Enter Admin Secret Key">
                 </div>
 
                 <div class="input-box">
@@ -66,7 +79,7 @@
                   <i class="fas fa-lock"></i>
                   <input type="password" id="login-password" name="password" placeholder="Enter your password" required>
                 </div>
-                <div class="text"><a href="#" >Forgot password?</a></div>
+                <div class="text"><a href="#" onclick="showForgotPassword(event)">Forgot password?</a></div>
                 <div class="button input-box">
                   <input type="submit" value="Submit">
                 </div>
@@ -74,13 +87,15 @@
               </div>
             </form>
           </div>
+
+          <!-- SIGNUP FORM -->
           <div class="signup-form">
             <div class="title">Signup</div>
-             <form action="Controllers/AuthController.php?action=signup" method="post"> 
+            <form action="Controllers/AuthController.php?action=signup" method="post"> 
               <div class="input-boxes">
                 <div class="input-box">
                   <i class="fas fa-user"></i>
-                  <input type="text" id="signup-name"  name="name" placeholder="Enter your name" required>
+                  <input type="text" id="signup-name" name="name" placeholder="Enter your name" required>
                 </div>
                 <div class="input-box">
                   <i class="fas fa-envelope"></i>
@@ -136,6 +151,39 @@
               </div>
             </form>
           </div>
+
+          <!-- FORGOT PASSWORD FORM -->
+          <div class="forgot-form">
+            <div class="title">Reset Password</div>
+            <form action="Controllers/AuthController.php?action=forgot_password" method="post">
+              <div class="input-boxes">
+                <div class="input-box">
+                  <i class="fas fa-user"></i>
+                  <input type="text" id="forgot-name" name="name" placeholder="Enter your name" required>
+                </div>
+                <div class="input-box">
+                  <i class="fas fa-envelope"></i>
+                  <input type="email" id="forgot-email" name="email" placeholder="Enter your email" required>
+                </div>
+                <div class="input-box">
+                  <i class="fas fa-phone"></i>
+                  <input type="tel" id="forgot-mobile" name="mobile" placeholder="Enter your mobile number" required pattern="\d{11}" title="Please enter a 11-digit mobile number">
+                </div>
+                <div class="input-box">
+                  <i class="fas fa-lock"></i>
+                  <input type="password" id="forgot-password" name="password" placeholder="Enter new password" required>
+                </div>
+                <div class="input-box">
+                  <i class="fas fa-lock"></i>
+                  <input type="password" id="forgot-confirm-password" name="confirm-password" placeholder="Confirm new password" required>
+                </div>
+                <div class="button input-box">
+                  <input type="submit" value="Reset Password">
+                </div>
+                <div class="text sign-up-text"><a href="#" onclick="backToLogin(event)">Back to Login</a></div>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     </div>
@@ -146,13 +194,23 @@ if (isset($_GET['signup']) && $_GET['signup'] === 'success') {
     echo "
     <script>
       alert('Signup successful! You can now log in.');
-      // Automatically uncheck the flip so it shows login side
       window.onload = function() {
         document.getElementById('flip').checked = false;
       };
     </script>
     ";
 }
-?>
 
+if (isset($_GET['reset']) && $_GET['reset'] === 'success') {
+    echo "
+    <script>
+      alert('Password reset successful! You can now log in with your new password.');
+      window.onload = function() {
+        document.getElementById('flip').checked = false;
+        document.getElementById('flip-forgot').checked = false;
+      };
+    </script>
+    ";
+}
+?>
 </html>

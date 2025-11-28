@@ -117,6 +117,51 @@ class User {
     }
     
     /**
+     * Verify user information (for password reset)
+     */
+    public function verifyUserInfo($name, $email, $mobile) {
+        $stmt = $this->db->prepare("SELECT * FROM users WHERE name = ? AND email = ? AND mobile = ?");
+        if (!$stmt) {
+            die("Prepare failed: " . $this->db->error);
+        }
+        
+        $stmt->bind_param("sss", $name, $email, $mobile);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($result->num_rows > 0) {
+            $row = $result->fetch_assoc();
+            $this->id = $row['id'];
+            $this->name = $row['name'];
+            $this->email = $row['email'];
+            $this->password = $row['password'];
+            $this->mobile = $row['mobile'];
+            $this->role = $row['role'];
+            $stmt->close();
+            return true;
+        }
+        $stmt->close();
+        return false;
+    }
+    
+    /**
+     * Update password in database
+     */
+    public function updatePassword($email, $newPassword) {
+        $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+        
+        $stmt = $this->db->prepare("UPDATE users SET password = ? WHERE email = ?");
+        if (!$stmt) {
+            die("Prepare failed: " . $this->db->error);
+        }
+        
+        $stmt->bind_param("ss", $hashedPassword, $email);
+        $success = $stmt->execute();
+        $stmt->close();
+        return $success;
+    }
+    
+    /**
      * Save new user to database
      */
     public function save() {
