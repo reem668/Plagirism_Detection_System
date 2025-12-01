@@ -7,23 +7,31 @@ require_once __DIR__ . '../../../Controllers/SubmissionController.php';
 use Controllers\SubmissionController;
 use Helpers\Csrf;
 
-// Only students can access
-if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'student') {
+// Allow students and guests
+if (!isset($_SESSION['user_role']) || !in_array($_SESSION['user_role'], ['student', 'guest'], true)) {
     header("Location: ../signup.php");
     exit();
 }
 
-$ctrl = new SubmissionController();
+$isGuest = $_SESSION['user_role'] === 'guest';
+
+$ctrl = $isGuest ? null : new SubmissionController();
+
+// Guard write actions for guests
+if ($isGuest && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    header("Location: student_index.php?guest=1");
+    exit;
+}
 
 // DELETE
-if (isset($_POST['delete_id'])) {
+if (!$isGuest && isset($_POST['delete_id'])) {
     $ctrl->delete($_POST['delete_id'], $_SESSION['user_id']);
     header("Location: student_index.php");
     exit;
 }
 
 // RESTORE
-if (isset($_POST['restore_id'])) {
+if (!$isGuest && isset($_POST['restore_id'])) {
     $ctrl->restore($_POST['restore_id'], $_SESSION['user_id']);
     header("Location: student_index.php");
     exit;
@@ -31,7 +39,7 @@ if (isset($_POST['restore_id'])) {
 
 // SUBMISSION
 $submissionResult = null;
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete_id']) && !isset($_POST['restore_id'])) {
+if (!$isGuest && $_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete_id']) && !isset($_POST['restore_id'])) {
     $submissionResult = $ctrl->submit();
 }
 
@@ -107,6 +115,7 @@ $username = $_SESSION['user_name'] ?? 'Student';
 
                     <button type="submit">Submit</button>
                 </form>
+                <?php endif; ?>
             </div>
 
             <!-- Plagiarism Wheel -->
@@ -135,7 +144,10 @@ $username = $_SESSION['user_name'] ?? 'Student';
 
               <?php if($submissionResult): ?>
                 <?php if(!empty($submissionResult['alert_message'])): ?>
-                  <div class="alert-warning" style="background: #ff6b6b; color: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; font-weight: bold;">
+                  <div class="alert-warning" id="plagiarismAlert" style="background: #ff6b6b; color: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; font-weight: bold; position: relative;">
+                    <button type="button" id="closePlagiarismAlert" style="position:absolute;right:10px;top:8px;background:transparent;border:none;color:white;font-size:18px;cursor:pointer;line-height:1;">
+                      &times;
+                    </button>
                     <?= htmlspecialchars($submissionResult['alert_message']) ?>
                   </div>
                 <?php endif; ?>
@@ -211,9 +223,20 @@ document.addEventListener('DOMContentLoaded', function(){
     // Teacher dropdown toggle
     const submissionType = document.getElementById('submissionType');
     const teacherDropdown = document.getElementById('teacherDropdown');
-    submissionType?.addEventListener('change', ()=> {
-        teacherDropdown.style.display = (submissionType.value==='specific') ? 'block' : 'none';
-    });
+    if (submissionType && teacherDropdown) {
+        submissionType.addEventListener('change', ()=> {
+            teacherDropdown.style.display = (submissionType.value==='specific') ? 'block' : 'none';
+        });
+    }
+
+    // Dismiss plagiarism alert if X is clicked
+    const closeAlertBtn = document.getElementById('closePlagiarismAlert');
+    const alertBox = document.getElementById('plagiarismAlert');
+    if (closeAlertBtn && alertBox) {
+        closeAlertBtn.addEventListener('click', function () {
+            alertBox.style.display = 'none';
+        });
+    }
 });
 </script>
 
