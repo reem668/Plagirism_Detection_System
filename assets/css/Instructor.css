@@ -75,6 +75,13 @@ body {
     margin-bottom: 2px;
 }
 
+.students-section {
+    padding: 20px;
+    flex: 1;
+    overflow-y: auto;
+    background: #f8fafc;
+}
+
 .nav-menu {
     padding: 15px 20px;
     border-bottom: 2px solid #e2e8f0;
@@ -108,13 +115,6 @@ body {
 
 .nav-item span {
     margin-right: 8px;
-}
-
-.students-section {
-    padding: 20px;
-    flex: 1;
-    overflow-y: auto;
-    background: #f8fafc;
 }
 
 .students-section h3 {
@@ -313,9 +313,20 @@ body {
     font-size: 18px;
 }
 
-.plagiarism-low { background: #dcfce7; color: #166534; }
-.plagiarism-medium { background: #fef3c7; color: #92400e; }
-.plagiarism-high { background: #fee2e2; color: #991b1b; }
+.plagiarism-low {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.plagiarism-medium {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.plagiarism-high {
+    background: #fee2e2;
+    color: #991b1b;
+}
 
 .submission-content {
     background: #f8fafc;
@@ -373,20 +384,60 @@ body {
     transition: all 0.3s ease;
 }
 
-.btn-accept { background: #1483be; color: white; }
-.btn-accept:hover { background: #0f6a9a; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(20, 131, 190, 0.3); }
+.btn-accept {
+    background: #1483be;
+    color: white;
+}
 
-.btn-reject { background: #dc2626; color: white; }
-.btn-reject:hover { background: #b91c1c; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3); }
+.btn-accept:hover {
+    background: #0f6a9a;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(20, 131, 190, 0.3);
+}
 
-.btn-delete { background: #64748b; color: white; }
-.btn-delete:hover { background: #475569; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(100, 116, 139, 0.3); }
+.btn-reject {
+    background: #dc2626;
+    color: white;
+}
 
-.btn-feedback { background: #0891b2; color: white; }
-.btn-feedback:hover { background: #0e7490; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(8, 145, 178, 0.3); }
+.btn-reject:hover {
+    background: #b91c1c;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);
+}
 
-.btn-restore { background: #16a34a; color: white; }
-.btn-restore:hover { background: #15803d; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(22, 163, 74, 0.3); }
+.btn-delete {
+    background: #64748b;
+    color: white;
+}
+
+.btn-delete:hover {
+    background: #475569;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(100, 116, 139, 0.3);
+}
+
+.btn-feedback {
+    background: #0891b2;
+    color: white;
+}
+
+.btn-feedback:hover {
+    background: #0e7490;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(8, 145, 178, 0.3);
+}
+
+.btn-restore {
+    background: #16a34a;
+    color: white;
+}
+
+.btn-restore:hover {
+    background: #15803d;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(22, 163, 74, 0.3);
+}
 
 .trash-badge {
     background: #dc2626;
@@ -394,8 +445,8 @@ body {
     padding: 3px 8px;
     border-radius: 12px;
     font-size: 11px;
-    margin-left: 8px;
     font-weight: 600;
+    margin-left: 8px;
 }
 
 .status-badge {
@@ -407,9 +458,20 @@ body {
     margin-left: 10px;
 }
 
-.status-accepted { background: #dcfce7; color: #166534; }
-.status-rejected { background: #fee2e2; color: #991b1b; }
-.status-pending { background: #dbeafe; color: #1e40af; }
+.status-accepted {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-rejected {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.status-pending {
+    background: #dbeafe;
+    color: #1e40af;
+}
 
 .no-submissions {
     text-align: center;
@@ -418,6 +480,13 @@ body {
 }
 
 @media (max-width: 768px) {
-    .sidebar { width: 100%; position: relative; height: auto; }
-    .main-content { margin-left: 0; }
+    .sidebar {
+        width: 100%;
+        position: relative;
+        height: auto;
+    }
+
+    .main-content {
+        margin-left: 0;
+    }
 }
