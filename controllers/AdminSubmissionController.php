@@ -4,8 +4,8 @@ namespace Controllers;
 require_once __DIR__ . '/../Models/Submission.php';
 require_once __DIR__ . '/../Helpers/Csrf.php';
 
-use models\Submission;
-use helpers\Csrf;
+use Models\Submission;
+use Helpers\Csrf;
 
 /**
  * AdminSubmissionController
@@ -19,7 +19,7 @@ class AdminSubmissionController {
     protected $submission;
 
     public function __construct() {
-        require __DIR__ . '/../../includes/db.php';
+         require dirname(__DIR__) . '/includes/db.php';
         $this->conn = $conn;
         
         if ($this->conn->connect_error) {
@@ -50,7 +50,7 @@ class AdminSubmissionController {
         $sql = "SELECT s.*, 
                        u.name as student_name, 
                        u.email as student_email,
-                       c.code as course_code,
+                       c.id as course_code,
                        c.name as course_name,
                        i.name as instructor_name
                 FROM submissions s
@@ -182,7 +182,7 @@ class AdminSubmissionController {
                        u.name as student_name, 
                        u.email as student_email,
                        c.id as course_id,
-                       c.code as course_code,
+                       c.id as course_code,
                        c.name as course_name,
                        i.name as instructor_name,
                        i.email as instructor_email
@@ -279,7 +279,7 @@ class AdminSubmissionController {
 
         $sql = "SELECT s.*, 
                        u.name as student_name,
-                       c.code as course_code
+                       c.id as course_code
                 FROM submissions s
                 LEFT JOIN users u ON s.user_id = u.id
                 LEFT JOIN courses c ON s.course_id = c.id

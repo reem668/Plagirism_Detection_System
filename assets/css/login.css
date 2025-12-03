@@ -41,6 +41,15 @@ body {
   pointer-events: none;
 }
 
+/* Forgot Password Flip Logic */
+.container #flip-forgot:checked ~ .forms .login-form,
+.container #flip-forgot:checked ~ .forms .signup-form {
+  display: none;
+}
+.container #flip-forgot:checked ~ .forms .forgot-form {
+  display: block;
+}
+
 .container .cover .front {
   position: absolute;
   top: 0;
@@ -61,7 +70,7 @@ body {
   height: 100%;
   width: 100%;
   object-fit: cover;
-  z-index: 101; /* Ensure it's visible */
+  z-index: 101;
 }
 
 .container .cover .back {
@@ -97,7 +106,7 @@ body {
   height: 100%;
   width: 100%;
   opacity: 0.5;
-  background: #000080; /* Updated background color */
+  background: #000080;
 }
 .cover .text .text-1,
 .cover .text .text-2 {
@@ -122,9 +131,16 @@ body {
   justify-content: space-between;
 }
 .form-content .login-form,
-.form-content .signup-form {
+.form-content .signup-form,
+.form-content .forgot-form {
   width: calc(100% / 2 - 25px);
 }
+
+/* Hide forgot form by default */
+.form-content .forgot-form {
+  display: none;
+}
+
 .forms .form-content .title {
   position: relative;
   font-size: 24px;
@@ -138,10 +154,13 @@ body {
   bottom: 0;
   height: 3px;
   width: 25px;
-  background: #000080; /* Updated background color */
+  background: #000080;
 }
 .forms .signup-form .title:before {
   width: 20px;
+}
+.forms .forgot-form .title:before {
+  width: 30px;
 }
 .forms .form-content .input-boxes {
   margin-top: 30px;
@@ -167,11 +186,11 @@ body {
 }
 .form-content .input-box input:focus,
 .form-content .input-box input:valid {
-  border-color:#000080; /* Updated border color */
+  border-color:#000080;
 }
 .form-content .input-box i {
   position: absolute;
-  color: #000080; /* Updated icon color */
+  color: #000080;
   font-size: 17px;
 }
 .forms .form-content .text {
@@ -181,6 +200,7 @@ body {
 }
 .forms .form-content .text a {
   text-decoration: none;
+  color: #000080;
 }
 .forms .form-content .text a:hover {
   text-decoration: underline;
@@ -191,17 +211,17 @@ body {
 }
 .forms .form-content .button input {
   color: #fff;
-  background: #000080; /* Updated button color */
+  background: #000080;
   border-radius: 6px;
   padding: 0;
   cursor: pointer;
   transition: all 0.4s ease;
 }
 .forms .form-content .button input:hover {
-  background: #0056b3; /* Updated hover color */
+  background: #0056b3;
 }
 .forms .form-content label {
-  color:#000080; /* Updated label color */
+  color:#000080;
   cursor: pointer;
 }
 .forms .form-content label:hover {
@@ -212,7 +232,8 @@ body {
   text-align: center;
   margin-top: 25px;
 }
-.container #flip {
+.container #flip,
+.container #flip-forgot {
   display: none;
 }
 @media (max-width: 730px) {
@@ -220,10 +241,12 @@ body {
     display: none;
   }
   .form-content .login-form,
-  .form-content .signup-form {
+  .form-content .signup-form,
+  .form-content .forgot-form {
     width: 100%;
   }
-  .form-content .signup-form {
+  .form-content .signup-form,
+  .form-content .forgot-form {
     display: none;
   }
   .container #flip:checked ~ .forms .signup-form {
@@ -231,5 +254,12 @@ body {
   }
   .container #flip:checked ~ .forms .login-form {
     display: none;
+  }
+  .container #flip-forgot:checked ~ .forms .login-form,
+  .container #flip-forgot:checked ~ .forms .signup-form {
+    display: none;
+  }
+  .container #flip-forgot:checked ~ .forms .forgot-form {
+    display: block;
   }
 }

@@ -5,7 +5,6 @@ $current = $page ?? 'dashboard';
 $baseUrl = '/Plagirism_Detection_System';
 ?>
 <aside class="sidebar" id="sidebar">
-  <div class="logo">⚙️</div>
 
   <div class="admin-profile">
     <div class="admin-avatar"><?= strtoupper($adminName[0]) ?></div>

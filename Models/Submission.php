@@ -120,70 +120,203 @@ class Submission {
         return $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
     }
 
-  public function moveToTrash(int $submission_id): bool {
-    // Soft delete via status column
-    $stmt = $this->conn->prepare("
-        UPDATE submissions SET status='deleted' WHERE id=?
-    ");
-    $stmt->bind_param("i", $submission_id);
-    $result = $stmt->execute();
-    $stmt->close();
-    return $result;
-}
-
-public function accept(int $submission_id): bool {
-    $stmt = $this->conn->prepare("
-        UPDATE submissions SET status='accepted' WHERE id=?
-    ");
-    $stmt->bind_param("i", $submission_id);
-    $result = $stmt->execute();
-    $stmt->close();
-    return $result;
-}
-public function addFeedback(int $submission_id, string $feedback): bool {
-    $stmt = $this->conn->prepare("
-        UPDATE submissions SET feedback=? WHERE id=?
-    ");
-    $stmt->bind_param("si", $feedback, $submission_id);
-    $result = $stmt->execute();
-    $stmt->close();
-    return $result;
-}
-
-public function reject(int $submission_id): bool {
-    $stmt = $this->conn->prepare("
-        UPDATE submissions SET status='rejected' WHERE id=?
-    ");
-    $stmt->bind_param("i", $submission_id);
-    $result = $stmt->execute();
-    $stmt->close();
-    return $result;
-}
-
-/**
- * Get report file path for a submission
- */
-public function getReportPath(int $submission_id): ?string {
-    $rootPath = dirname(dirname(__DIR__));
-    $storageDir = $rootPath . '/storage/reports';
-    $files = glob($storageDir . "/report_{$submission_id}_*.html");
-    if (empty($files)) {
-        return null;
+    /**
+     * Get ALL submissions (for admin)
+     * No user filter - returns everything
+     */
+    public function getAll($limit = 100, $offset = 0) {
+        $sql = "SELECT * FROM submissions ORDER BY created_at DESC LIMIT ? OFFSET ?";
+        $stmt = $this->conn->prepare($sql);
+        
+        if (!$stmt) {
+            die("Prepare failed: " . $this->conn->error);
+        }
+        
+        $stmt->bind_param("ii", $limit, $offset);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $rows = $result->fetch_all(MYSQLI_ASSOC);
+        $stmt->close();
+        
+        return $rows;
     }
-    return $files[0];
-}
 
-/**
- * Check if instructor owns this submission (by teacher name)
- */
-public function isOwnedByInstructor(int $submission_id, string $instructor_name): bool {
-    $stmt = $this->conn->prepare("SELECT teacher FROM submissions WHERE id = ?");
-    $stmt->bind_param("i", $submission_id);
-    $stmt->execute();
-    $res = $stmt->get_result();
-    $row = $res->fetch_assoc();
-    $stmt->close();
-    return $row && $row['teacher'] === $instructor_name;
-}
+    /**
+     * Delete a submission by ID
+     */
+    public function delete($id) {
+        $stmt = $this->conn->prepare("DELETE FROM submissions WHERE id = ?");
+        
+        if (!$stmt) {
+            die("Prepare failed: " . $this->conn->error);
+        }
+        
+        $stmt->bind_param("i", $id);
+        $success = $stmt->execute();
+        $affected = $stmt->affected_rows;
+        $stmt->close();
+        
+        return $affected > 0;
+    }
 
+    /**
+     * Update submission fields
+     */
+    public function update($id, $data) {
+        $setClauses = [];
+        $params = [];
+        $types = "";
+
+        $allowedFields = [
+            'status' => 's',
+            'similarity' => 'i',
+            'exact_match' => 'i',
+            'partial_match' => 'i',
+            'course_id' => 'i',
+            'instructor_id' => 'i',
+            'teacher' => 's',
+            'text_content' => 's'
+        ];
+
+        foreach ($data as $field => $value) {
+            if (isset($allowedFields[$field])) {
+                $setClauses[] = "$field = ?";
+                $params[] = $value;
+                $types .= $allowedFields[$field];
+            }
+        }
+
+        if (empty($setClauses)) {
+            return false;
+        }
+
+        $sql = "UPDATE submissions SET " . implode(", ", $setClauses) . " WHERE id = ?";
+        $params[] = $id;
+        $types .= "i";
+
+        $stmt = $this->conn->prepare($sql);
+        
+        if (!$stmt) {
+            die("Prepare failed: " . $this->conn->error);
+        }
+
+        $stmt->bind_param($types, ...$params);
+        $success = $stmt->execute();
+        $stmt->close();
+
+        return $success;
+    }
+
+    /**
+     * Count total submissions (for statistics)
+     */
+    public function count($conditions = []) {
+        $sql = "SELECT COUNT(*) as total FROM submissions WHERE 1=1";
+        $params = [];
+        $types = "";
+
+        if (isset($conditions['status'])) {
+            $sql .= " AND status = ?";
+            $params[] = $conditions['status'];
+            $types .= "s";
+        }
+
+        if (isset($conditions['min_similarity'])) {
+            $sql .= " AND similarity >= ?";
+            $params[] = $conditions['min_similarity'];
+            $types .= "i";
+        }
+
+        if (isset($conditions['max_similarity'])) {
+            $sql .= " AND similarity <= ?";
+            $params[] = $conditions['max_similarity'];
+            $types .= "i";
+        }
+
+        if (isset($conditions['user_id'])) {
+            $sql .= " AND user_id = ?";
+            $params[] = $conditions['user_id'];
+            $types .= "i";
+        }
+
+        if (isset($conditions['course_id'])) {
+            $sql .= " AND course_id = ?";
+            $params[] = $conditions['course_id'];
+            $types .= "i";
+        }
+
+        $stmt = $this->conn->prepare($sql);
+        
+        if (!empty($params)) {
+            $stmt->bind_param($types, ...$params);
+        }
+        
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $stmt->close();
+
+        return $row['total'];
+    }
+
+    /**
+     * Get submissions by course
+     */
+    public function getByCourse($courseId) {
+        $stmt = $this->conn->prepare(
+            "SELECT * FROM submissions WHERE course_id = ? ORDER BY created_at DESC"
+        );
+        $stmt->bind_param("i", $courseId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $rows = $result->fetch_all(MYSQLI_ASSOC);
+        $stmt->close();
+        
+        return $rows;
+    }
+
+    /**
+     * Get submissions by instructor
+     */
+    public function getByInstructor($instructorId) {
+        $stmt = $this->conn->prepare(
+            "SELECT * FROM submissions WHERE instructor_id = ? ORDER BY created_at DESC"
+        );
+        $stmt->bind_param("i", $instructorId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $rows = $result->fetch_all(MYSQLI_ASSOC);
+        $stmt->close();
+        
+        return $rows;
+    }
+
+    /**
+     * Get average similarity score
+     */
+    public function getAverageSimilarity($conditions = []) {
+        $sql = "SELECT AVG(similarity) as avg FROM submissions WHERE similarity IS NOT NULL";
+        $params = [];
+        $types = "";
+
+        if (isset($conditions['course_id'])) {
+            $sql .= " AND course_id = ?";
+            $params[] = $conditions['course_id'];
+            $types .= "i";
+        }
+
+        $stmt = $this->conn->prepare($sql);
+        
+        if (!empty($params)) {
+            $stmt->bind_param($types, ...$params);
+        }
+        
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $stmt->close();
+
+        return $row['avg'] ? round($row['avg'], 1) : 0;
+    }
 }
+?>

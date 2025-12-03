@@ -2,6 +2,7 @@
 namespace Controllers;
 
 require_once __DIR__ . '/../Models/Submission.php';
+require_once __DIR__ . '/../Models/Settings.php';
 require_once __DIR__ . '/../Helpers/Csrf.php';
 require_once __DIR__ . '/../Helpers/Validator.php';
 require_once __DIR__ . '/../Helpers/FileStorage.php';
@@ -10,6 +11,7 @@ use Helpers\Csrf;
 use Helpers\Validator;
 use Helpers\FileStorage;
 use Models\Submission;
+use Models\Settings;
 
 class SubmissionController {
     protected $conn;
@@ -54,6 +56,17 @@ class SubmissionController {
         // Check plagiarism and get matching words
         $plagData = $this->checkPlagiarism($text);
 
+        // Get plagiarism threshold from settings
+        $settings = new Settings($this->conn);
+        $threshold = floatval($settings->get('plagiarism_threshold', 50));
+        $similarity = $plagData['plagiarised'];
+        
+        // Check if similarity exceeds threshold
+        $exceedsThreshold = $similarity > $threshold;
+        $alertMessage = $exceedsThreshold 
+            ? "⚠️ WARNING: This submission has a similarity score of {$similarity}%, which exceeds the threshold of {$threshold}%!"
+            : null;
+
         $data = [
             'user_id' => $userId,
             'teacher' => $teacher,
@@ -61,7 +74,7 @@ class SubmissionController {
             'file_path' => $fileInfo['path'] ?? null,
             'stored_name' => $fileInfo['stored'] ?? null,
             'file_size' => $fileInfo['size'] ?? 0,
-            'similarity' => $plagData['plagiarised'],
+            'similarity' => $similarity,
             'exact_match' => $plagData['exact'],
             'partial_match' => $plagData['partial']
         ];
@@ -71,10 +84,13 @@ class SubmissionController {
 
         return [
             'submission_id' => $id,
-            'plagiarised' => $plagData['plagiarised'],
+            'plagiarised' => $similarity,
             'exact' => $plagData['exact'],
             'partial' => $plagData['partial'],
-            'reportPath' => $reportPath
+            'reportPath' => $reportPath,
+            'exceeds_threshold' => $exceedsThreshold,
+            'threshold' => $threshold,
+            'alert_message' => $alertMessage
         ];
     }
 

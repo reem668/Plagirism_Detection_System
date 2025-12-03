@@ -1,72 +1,89 @@
 <?php
-session_start();
+/**
+ * Protected Student Dashboard
+ * Only accessible by authenticated student users
+ */
 
-// Resolve project root (C:\xamppp\htdocs\Plagirism_Detection_System)
-$rootPath = dirname(dirname(__DIR__)); // Views/student -> Views -> project root
+require_once __DIR__ . '../../../Helpers/SessionManager.php';
+require_once __DIR__ . '../../../Middleware/AuthMiddleware.php';
+require_once __DIR__ . '../../../Helpers/Csrf.php';
+require_once __DIR__ . '../../../Controllers/SubmissionController.php';
 
-// Core dependencies from project root
-require_once $rootPath . '/Helpers/Csrf.php';
-require_once $rootPath . '/Controllers/SubmissionController.php';
-require_once $rootPath . '/Models/Instructor.php';
-
+use Helpers\SessionManager;
+use Middleware\AuthMiddleware;
 use Controllers\SubmissionController;
 use Helpers\Csrf;
 use Models\Instructor;
 
-// Only students can access
-if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'student') {
-    header("Location: ../signup.php");
-    exit();
-}
+// Initialize authentication
+$session = SessionManager::getInstance();
+$auth = new AuthMiddleware();
 
-// DB connection for this view and the Instructor model
-require_once $rootPath . '/includes/db.php';
+// CRITICAL: Require student role - this blocks unauthorized access
+$auth->requireRole('student');
 
-// Ensure $conn is available and valid before using it
-if (!isset($conn) || !($conn instanceof mysqli)) {
-    die('Database connection not available. Please check includes/db.php configuration.');
-}
+// Get authenticated user info
+$currentUser = $auth->getCurrentUser();
+$userId = $currentUser['id'];
+$username = $currentUser['name'];
 
-// Controllers / Models
+// Initialize controller
 $ctrl = new SubmissionController();
 $instructorModel = new Instructor($conn);
 $instructors = $instructorModel->getAllInstructors();
 
-// DELETE
+// Verify CSRF for POST requests
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!Csrf::verify($_POST['_csrf'] ?? '')) {
+        die('CSRF token validation failed. Please refresh and try again.');
+    }
+}
+
+// Handle DELETE action
 if (isset($_POST['delete_id'])) {
-    $ctrl->delete($_POST['delete_id'], $_SESSION['user_id']);
-    header("Location: student_index.php");
-    exit;
+    // Verify ownership before deleting
+    if ($auth->ownsResource($_POST['delete_id'])) {
+        $ctrl->delete($_POST['delete_id'], $userId);
+        header("Location: student_index.php");
+        exit;
+    } else {
+        die('Unauthorized: You can only delete your own submissions.');
+    }
 }
 
-// RESTORE
+// Handle RESTORE action
 if (isset($_POST['restore_id'])) {
-    $ctrl->restore($_POST['restore_id'], $_SESSION['user_id']);
-    header("Location: student_index.php");
-    exit;
+    // Verify ownership before restoring
+    if ($auth->ownsResource($_POST['restore_id'])) {
+        $ctrl->restore($_POST['restore_id'], $userId);
+        header("Location: student_index.php");
+        exit;
+    } else {
+        die('Unauthorized: You can only restore your own submissions.');
+    }
 }
 
-// SUBMISSION
+// Handle SUBMISSION
 $submissionResult = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete_id']) && !isset($_POST['restore_id'])) {
+    // Additional validation: ensure user_id in submission matches authenticated user
+    $_POST['user_id'] = $userId; // Force correct user ID
     $submissionResult = $ctrl->submit();
 }
 
-// CSRF token
+// Generate CSRF token for forms
 $csrfToken = Csrf::token();
 
-// Fetch submissions
-$submissions = $ctrl->getUserSubmissions($_SESSION['user_id'], 'active');
-$deletedSubmissions = $ctrl->getUserSubmissions($_SESSION['user_id'], 'deleted');
-
-$username = $_SESSION['user_name'] ?? 'Student';
+// Fetch submissions - only for authenticated user
+$submissions = $ctrl->getUserSubmissions($userId, 'active');
+$deletedSubmissions = $ctrl->getUserSubmissions($userId, 'deleted');
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Plagiarism Detection - Student</title>
+<title>Plagiarism Detection - Student Dashboard</title>
 <link rel="stylesheet" href="../../assets/css/student.css">
 <link rel="stylesheet" href="../../assets/css/user.css">
 </head>
@@ -77,13 +94,14 @@ $username = $_SESSION['user_name'] ?? 'Student';
     <div class="user-profile">
         <p class="username"><?= htmlspecialchars($username) ?></p>
         <p class="user-role">Student</p>
+        <p class="user-id">ID: <?= htmlspecialchars($userId) ?></p>
     </div>
     <div class="menu">
         <a href="#" id="homeBtn" data-tooltip="Home">🏠</a>
         <a href="#" id="historyBtn" data-tooltip="Past History">📜</a>
         <a href="#" id="trashBtn" data-tooltip="Trash">🗑️</a>
     </div>
-    <a href="<?= htmlspecialchars('../../logout.php', ENT_QUOTES) ?>" class="logout" data-tooltip="Logout">⏻</a>
+    <a href="<?= htmlspecialchars('../../logout.php', ENT_QUOTES) ?>" class="logout" data-tooltip="Logout">↻</a>
 </nav>
 
 <!-- Main content -->
@@ -98,10 +116,14 @@ $username = $_SESSION['user_name'] ?? 'Student';
             <div class="submission-box">
                 <h2>Submission Form</h2>
                 <form id="submissionForm" method="POST" enctype="multipart/form-data">
+                    <!-- CSRF Protection -->
                     <input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES) ?>">
+                    
+                    <!-- Hidden user ID - server will verify this matches session -->
+                    <input type="hidden" name="user_id" value="<?= htmlspecialchars($userId, ENT_QUOTES) ?>">
 
                     <label for="submissionType">Submission Type</label>
-                    <select id="submissionType" name="submissionType">
+                    <select id="submissionType" name="submissionType" required>
                         <option value="general">General Submission</option>
                         <option value="specific">Specific Teacher</option>
                     </select>
@@ -123,7 +145,7 @@ $username = $_SESSION['user_name'] ?? 'Student';
                     </div>
 
                     <label for="textInput">Text</label>
-                    <textarea id="textInput" name="textInput" placeholder="Enter your text..."></textarea>
+                    <textarea id="textInput" name="textInput" placeholder="Enter your text..." rows="8"></textarea>
 
                     <label for="fileInput">Upload File</label>
                     <input type="file" id="fileInput" name="fileInput" accept=".txt,.docx">
@@ -157,11 +179,15 @@ $username = $_SESSION['user_name'] ?? 'Student';
                 </div>
 
               <?php if($submissionResult): ?>
-  <a href="download.php?id=<?php echo $submissionResult['submission_id']; ?>" class="download-btn">
-    Download Report
-</a>
-
-<?php endif; ?>
+                <?php if(!empty($submissionResult['alert_message'])): ?>
+                  <div class="alert-warning" style="background: #ff6b6b; color: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; font-weight: bold;">
+                    <?= htmlspecialchars($submissionResult['alert_message']) ?>
+                  </div>
+                <?php endif; ?>
+                <a href="download.php?id=<?php echo $submissionResult['submission_id']; ?>" class="download-btn">
+                  Download Report
+                </a>
+              <?php endif; ?>
 
             </aside>
 
@@ -175,18 +201,23 @@ $username = $_SESSION['user_name'] ?? 'Student';
             <?php foreach($submissions as $sub): ?>
                 <div class="history-item">
                     <h3>Submission #<?= $sub['id'] ?></h3>
-                    <p>Plagiarism: <?= $sub['similarity'] ?>%</p>
+                    <p><strong>Date:</strong> <?= htmlspecialchars($sub['created_at']) ?></p>
+                    <p><strong>Plagiarism:</strong> <?= $sub['similarity'] ?>%</p>
+                    <p><strong>Status:</strong> <?= htmlspecialchars($sub['status']) ?></p>
+                    
                     <?php if(!empty($sub['file_path'])): ?>
-                        <a href="<?= htmlspecialchars($sub['file_path']) ?>" download>Download File</a>
+                        <a href="<?= htmlspecialchars($sub['file_path']) ?>" download class="btn-download">Download File</a>
                     <?php endif; ?>
+                    
                     <form method="POST" style="display:inline;">
+                        <input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES) ?>">
                         <input type="hidden" name="delete_id" value="<?= $sub['id'] ?>">
-                        <button type="submit">Delete</button>
+                        <button type="submit" class="btn-delete" onclick="return confirm('Move to trash?')">Delete</button>
                     </form>
                 </div>
             <?php endforeach; ?>
         <?php else: ?>
-            <p>No submissions yet.</p>
+            <p class="empty-message">No submissions yet.</p>
         <?php endif; ?>
     </section>
 
@@ -195,26 +226,30 @@ $username = $_SESSION['user_name'] ?? 'Student';
         <h1>Trash</h1>
         <?php if($deletedSubmissions): ?>
             <?php foreach($deletedSubmissions as $sub): ?>
-                <div class="history-item">
+                <div class="history-item deleted">
                     <h3>Submission #<?= $sub['id'] ?></h3>
-                    <p>Plagiarism: <?= $sub['similarity'] ?>%</p>
+                    <p><strong>Date:</strong> <?= htmlspecialchars($sub['created_at']) ?></p>
+                    <p><strong>Plagiarism:</strong> <?= $sub['similarity'] ?>%</p>
+                    
                     <?php if(!empty($sub['file_path'])): ?>
-                        <a href="<?= htmlspecialchars($sub['file_path']) ?>" download>Download File</a>
+                        <a href="<?= htmlspecialchars($sub['file_path']) ?>" download class="btn-download">Download File</a>
                     <?php endif; ?>
+                    
                     <form method="POST" style="display:inline;">
+                        <input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES) ?>">
                         <input type="hidden" name="restore_id" value="<?= $sub['id'] ?>">
-                        <button type="submit">Restore</button>
+                        <button type="submit" class="btn-restore">Restore</button>
                     </form>
                 </div>
             <?php endforeach; ?>
         <?php else: ?>
-            <p>Trash is empty.</p>
+            <p class="empty-message">Trash is empty.</p>
         <?php endif; ?>
     </section>
 
 </main>
 
-<!-- JS -->
+<!-- JavaScript -->
 <script>
 document.addEventListener('DOMContentLoaded', function(){
     // Page navigation
@@ -259,3 +294,4 @@ document.addEventListener('DOMContentLoaded', function(){
 
 </body>
 </html>
+Claude

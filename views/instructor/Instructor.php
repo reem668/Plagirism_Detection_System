@@ -1,10 +1,39 @@
+
 <?php
 /**
- * Instructor Dashboard View
- * This file is included by Instructordashboard.php which handles all authentication
+ * Protected Instructor Dashboard View
+ * This file should only be accessed through Instructordashboard.php
+ * Additional security checks included
  */
-?>
 
+// Security check - ensure this file is accessed through Instructordashboard.php
+if (!defined('INSTRUCTOR_ACCESS')) {
+    die('Direct access not permitted. Please access through Instructordashboard.php');
+}
+
+// Additional authentication verification
+require_once __DIR__ . '/../../Helpers/SessionManager.php';
+require_once __DIR__ . '/../../Middleware/AuthMiddleware.php';
+
+use Helpers\SessionManager;
+use Middleware\AuthMiddleware;
+
+$session = SessionManager::getInstance();
+$auth = new AuthMiddleware();
+
+// Double-check authentication
+if (!$session->isLoggedIn() || $session->getUserRole() !== 'instructor') {
+    header("Location: /Plagirism_Detection_System/signup.php");
+    exit();
+}
+
+// Verify the instructor owns the data being viewed
+$currentInstructor = $auth->getCurrentUser();
+if ($currentInstructor['id'] != $instructor_id) {
+    http_response_code(403);
+    die('Error: Unauthorized access. You can only view your own dashboard.');
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
