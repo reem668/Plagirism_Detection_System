@@ -1,4 +1,6 @@
 <?php
+namespace Controllers;
+
 require_once __DIR__ . '/../Models/Instructor.php';
 require_once __DIR__ . '/../Models/Submission.php';
 require_once __DIR__ . '/../Helpers/Csrf.php';
@@ -44,8 +46,8 @@ class InstructorController {
             exit;
         }
 
-        $stats = $this->instructorModel->getStats();
-        $enrolled_students = $this->instructorModel->getEnrolledStudents();
+        $stats = $this->instructorModel->getStats($instructor_id);
+        $enrolled_students = $this->instructorModel->getEnrolledStudents($instructor_id);
         $submissions = $this->instructorModel->getSubmissions($instructor_id);
         $trash = $this->instructorModel->getTrash($instructor_id);
 

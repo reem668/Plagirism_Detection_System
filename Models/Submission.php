@@ -9,21 +9,62 @@ class Submission {
     }
 
     /**
+     * Get or create a default course for general submissions
+     */
+    public function getOrCreateDefaultCourse(): int {
+        // Try to get a default "General" course
+        $stmt = $this->conn->prepare("SELECT id FROM courses WHERE name = 'General' LIMIT 1");
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $course = $result->fetch_assoc();
+        $stmt->close();
+        
+        if ($course) {
+            return $course['id'];
+        }
+        
+        // If no default course exists, create one with a default instructor
+        // First, get any instructor ID (or use 1 as fallback)
+        $stmt = $this->conn->prepare("SELECT id FROM users WHERE role = 'instructor' LIMIT 1");
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $instructor = $result->fetch_assoc();
+        $stmt->close();
+        
+        $instructorId = $instructor ? $instructor['id'] : 1;
+        
+        // Create the default course
+        $stmt = $this->conn->prepare("INSERT INTO courses (name, instructor_id) VALUES ('General', ?)");
+        $stmt->bind_param("i", $instructorId);
+        $stmt->execute();
+        $courseId = $stmt->insert_id;
+        $stmt->close();
+        
+        return $courseId;
+    }
+
+    /**
      * Create a new submission
      */
     public function create(array $data): int {
+        // Ensure course_id is set, use default if not provided
+        if (!isset($data['course_id']) || empty($data['course_id'])) {
+            $data['course_id'] = $this->getOrCreateDefaultCourse();
+        }
+        
         $sql = "
             INSERT INTO submissions 
-            (user_id, teacher, text_content, file_path, stored_name, file_size, similarity, exact_match, partial_match, status, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW())
+            (user_id, course_id, teacher, text_content, file_path, stored_name, file_size, similarity, exact_match, partial_match, status, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW())
         ";
 
         $stmt = $this->conn->prepare($sql);
         if (!$stmt) die("Prepare failed: ".$this->conn->error);
 
         $stmt->bind_param(
-            "issssiiii",
+            "iissssiiii",
             $data['user_id'],
+            $data['course_id'],
             $data['teacher'],
             $data['text_content'],
             $data['file_path'],

@@ -41,17 +41,26 @@ class Instructor {
     $stmt = $this->conn->prepare("SELECT name FROM users WHERE id=?");
     $stmt->bind_param("i", $instructor_id);
     $stmt->execute();
-    $instructor_name = $stmt->get_result()->fetch_assoc()['name'];
+    $instructor_result = $stmt->get_result();
+    $instructor_data = $instructor_result->fetch_assoc();
     $stmt->close();
+    
+    if (!$instructor_data || !isset($instructor_data['name'])) {
+        return [];
+    }
+    
+    $instructor_name = trim($instructor_data['name']);
 
     // Fetch submissions where teacher matches this instructor (exclude deleted via status)
+    // Match by exact name (case-insensitive in MySQL by default)
     $sql = "
         SELECT s.id, s.user_id, s.course_id, s.teacher, s.text_content, s.file_path, s.stored_name,
                s.file_size, s.similarity, s.status, s.created_at, s.feedback,
                u.name AS student_name, u.email AS student_email
         FROM submissions s
         JOIN users u ON s.user_id = u.id
-        WHERE s.teacher = ? AND s.status <> 'deleted'
+        WHERE TRIM(s.teacher) = ? AND s.status <> 'deleted' AND s.teacher IS NOT NULL AND s.teacher != ''
+        ORDER BY s.created_at DESC
     ";
 
     $stmt = $this->conn->prepare($sql);
@@ -72,8 +81,15 @@ public function getTrash($instructor_id) {
     $stmt = $this->conn->prepare("SELECT name FROM users WHERE id=?");
     $stmt->bind_param("i", $instructor_id);
     $stmt->execute();
-    $instructor_name = $stmt->get_result()->fetch_assoc()['name'];
+    $instructor_result = $stmt->get_result();
+    $instructor_data = $instructor_result->fetch_assoc();
     $stmt->close();
+    
+    if (!$instructor_data || !isset($instructor_data['name'])) {
+        return [];
+    }
+    
+    $instructor_name = trim($instructor_data['name']);
 
     $sql = "
         SELECT s.id, s.user_id, s.course_id, s.teacher, s.text_content, s.file_path, s.stored_name,
@@ -81,7 +97,8 @@ public function getTrash($instructor_id) {
                u.name AS student_name, u.email AS student_email
         FROM submissions s
         JOIN users u ON s.user_id = u.id
-        WHERE s.teacher = ? AND s.status = 'deleted'
+        WHERE TRIM(s.teacher) = ? AND s.status = 'deleted' AND s.teacher IS NOT NULL AND s.teacher != ''
+        ORDER BY s.created_at DESC
     ";
 
     $stmt = $this->conn->prepare($sql);
@@ -97,17 +114,69 @@ public function getTrash($instructor_id) {
     return $trash;
 }
 
-    public function getStats() {
-        $result = $this->conn->query("SELECT COUNT(*) AS students_enrolled FROM users WHERE role='student'");
-        return $result->fetch_assoc();
+    public function getStats($instructor_id) {
+        // Get instructor name first
+        $stmt = $this->conn->prepare("SELECT name FROM users WHERE id=?");
+        $stmt->bind_param("i", $instructor_id);
+        $stmt->execute();
+        $instructor_result = $stmt->get_result();
+        $instructor = $instructor_result->fetch_assoc();
+        $stmt->close();
+        
+        if (!$instructor || !isset($instructor['name'])) {
+            return ['students_enrolled' => 0];
+        }
+        
+        $instructor_name = trim($instructor['name']);
+        
+        // Count unique students who have submitted to this instructor (excluding deleted)
+        $stmt = $this->conn->prepare("
+            SELECT COUNT(DISTINCT s.user_id) AS students_enrolled 
+            FROM submissions s 
+            WHERE TRIM(s.teacher) = ? AND s.status <> 'deleted' AND s.teacher IS NOT NULL AND s.teacher != ''
+        ");
+        $stmt->bind_param("s", $instructor_name);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $stats = $result->fetch_assoc();
+        $stmt->close();
+        
+        return $stats ?: ['students_enrolled' => 0];
     }
 
-    public function getEnrolledStudents() {
+    public function getEnrolledStudents($instructor_id) {
+        // Get instructor name first
+        $stmt = $this->conn->prepare("SELECT name FROM users WHERE id=?");
+        $stmt->bind_param("i", $instructor_id);
+        $stmt->execute();
+        $instructor_result = $stmt->get_result();
+        $instructor = $instructor_result->fetch_assoc();
+        $stmt->close();
+        
+        if (!$instructor || !isset($instructor['name'])) {
+            return [];
+        }
+        
+        $instructor_name = trim($instructor['name']);
+        
+        // Get only students who have submitted to this instructor (excluding deleted)
         $students = [];
-        $result = $this->conn->query("SELECT * FROM users WHERE role='student'");
+        $stmt = $this->conn->prepare("
+            SELECT DISTINCT u.id, u.name, u.email, u.mobile, u.country, u.role, u.status, u.created_at
+            FROM users u
+            INNER JOIN submissions s ON u.id = s.user_id
+            WHERE TRIM(s.teacher) = ? AND s.status <> 'deleted' AND s.teacher IS NOT NULL AND s.teacher != '' AND u.role = 'student'
+            ORDER BY u.name ASC
+        ");
+        $stmt->bind_param("s", $instructor_name);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
         while ($row = $result->fetch_assoc()) {
             $students[] = $row;
         }
+        $stmt->close();
+        
         return $students;
     }
 
