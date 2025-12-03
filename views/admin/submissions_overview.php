@@ -1,10 +1,29 @@
 <?php
 /**
- * submissions_overview.php - Admin Submissions Overview
- * 
- * This file now uses the AdminSubmissionController to fetch real data
- * from the database instead of localStorage simulation.
+ * Protected Admin Submissions Overview View
+ * This file should only be accessed through admin.php
  */
+
+// Security check - ensure this file is accessed through admin.php
+if (!defined('ADMIN_ACCESS')) {
+    die('Direct access not permitted. Please access through admin.php');
+}
+
+// Additional authentication verification
+require_once __DIR__ . '/../../Helpers/SessionManager.php';
+require_once __DIR__ . '/../../Middleware/AuthMiddleware.php';
+
+use Helpers\SessionManager;
+use Middleware\AuthMiddleware;
+
+$session = SessionManager::getInstance();
+$auth = new AuthMiddleware();
+
+// Double-check authentication
+if (!$session->isLoggedIn() || $session->getUserRole() !== 'admin') {
+    header("Location: /Plagirism_Detection_System/signup.php");
+    exit();
+}
 
 // Include the controller
 require_once dirname(__DIR__, 2) . '/controllers/AdminSubmissionController.php';
@@ -34,7 +53,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
 $submissions = $adminController->getAllSubmissions($filters);
 $stats = $adminController->getStatistics();
 
-// Get users and courses for display (you'll need these helpers)
+// Get users and courses for display
 require_once dirname(__DIR__, 2) . '/includes/db.php';
 
 function getUserById($conn, $id) {
@@ -57,7 +76,7 @@ function getCourseById($conn, $id) {
 <section class="submissions-overview">
   <h2>Submissions Overview 📄</h2>
 
-  <!-- Statistics Cards - Now with real PHP data -->
+  <!-- Statistics Cards -->
   <div class="stats-cards">
     <div class="stat-card">
       <div class="icon-wrap"><i class="fas fa-file-alt"></i></div>
@@ -212,7 +231,6 @@ function getCourseById($conn, $id) {
       <button class="close-panel-btn" onclick="closeSubmissionPanel()">&times;</button>
     </div>
     <div class="side-panel-body" id="submissionPanelBody">
-      <!-- Loaded via AJAX -->
       <p>Loading...</p>
     </div>
   </div>

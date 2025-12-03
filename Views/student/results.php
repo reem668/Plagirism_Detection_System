@@ -1,27 +1,42 @@
 <?php
-session_start();
+/**
+ * Protected Results Page
+ * Only authenticated students can view their own submission results
+ */
 
+require_once __DIR__ . '/../../Helpers/SessionManager.php';
+require_once __DIR__ . '/../../Middleware/AuthMiddleware.php';
 require_once __DIR__ . '/../../Controllers/SubmissionController.php';
 
+use Helpers\SessionManager;
+use Middleware\AuthMiddleware;
 use Controllers\SubmissionController;
 
-// Only students can access
-if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'student') {
-    header("Location: ../../signup.php");
-    exit();
-}
+// Initialize authentication
+$session = SessionManager::getInstance();
+$auth = new AuthMiddleware();
+
+// CRITICAL: Require student role
+$auth->requireRole('student');
+
+// Get current authenticated user
+$currentUser = $auth->getCurrentUser();
+$userId = $currentUser['id'];
 
 // Check if submission ID is provided
 $submissionId = $_GET['id'] ?? null;
 if (!$submissionId) {
-    die('Submission ID not specified.');
+    die('Error: Submission ID not specified.');
 }
 
+// Initialize controller
 $ctrl = new SubmissionController();
 
-// Fetch submission info
-$submissions = $ctrl->getUserSubmissions($_SESSION['user_id']);
+// Fetch user's submissions
+$submissions = $ctrl->getUserSubmissions($userId);
 $submission = null;
+
+// Find the specific submission and verify ownership
 foreach ($submissions as $sub) {
     if ($sub['id'] == $submissionId) {
         $submission = $sub;
@@ -29,27 +44,35 @@ foreach ($submissions as $sub) {
     }
 }
 
+// Verify ownership
 if (!$submission) {
-    die('Submission not found.');
+    http_response_code(403);
+    die('Error: Submission not found or you do not have permission to view it.');
 }
 
-// Prepare highlighted report
+// Additional ownership check
+if (!$auth->ownsResource($submission['user_id'])) {
+    http_response_code(403);
+    die('Error: Unauthorized access. You can only view your own submissions.');
+}
+
+// Prepare data for display
 $textContent = htmlspecialchars($submission['text_content']);
 $plagPercent = $submission['similarity'];
 $exact = $submission['exact_match'];
 $partial = $submission['partial_match'];
 
-// Optional: highlight repeated words
-$existing = $ctrl->getUserSubmissions($_SESSION['user_id'], 'active');
+// Optional: Highlight repeated words
+$existing = $ctrl->getUserSubmissions($userId, 'active');
 $matchingWords = [];
-$words = preg_split('/\s+/', strtolower($textContent));
+$words = preg_split('/\s+/', strtolower($submission['text_content']));
 $totalChunks = max(1, count($words) - 4);
 
 for ($i = 0; $i < $totalChunks; $i++) {
     $chunk = implode(' ', array_slice($words, $i, 5));
     foreach ($existing as $sub) {
         if ($sub['id'] == $submissionId) continue; // skip self
-        if (strpos(strtolower($sub['text_content']), $chunk) !== false) {
+        if (stripos($sub['text_content'], $chunk) !== false) {
             $matchingWords[] = $chunk;
             break;
         }
@@ -58,7 +81,8 @@ for ($i = 0; $i < $totalChunks; $i++) {
 
 // Highlight matching chunks
 foreach ($matchingWords as $chunk) {
-    $textContent = preg_replace('/\b(' . preg_quote($chunk, '/') . ')\b/i', '<mark>$1</mark>', $textContent);
+    $pattern = '/\b(' . preg_quote($chunk, '/') . ')\b/i';
+    $textContent = preg_replace($pattern, '<mark>$1</mark>', $textContent);
 }
 
 // Generate HTML report
@@ -75,17 +99,37 @@ $reportHtml = "<!DOCTYPE html>
 </style>
 </head>
 <body>
-<h1>Report for Submission #{$submissionId}</h1>
-<div class='summary'>
-    <p><strong>Plagiarised:</strong> {$plagPercent}%</p>
-    <p><strong>Exact Match:</strong> {$exact}%</p>
-    <p><strong>Partial Match:</strong> {$partial}%</p>
+<div class='container'>
+    <h1>📄 Submission Report #{$submissionId}</h1>
+    
+    <div class='summary'>
+        <div class='summary-item'>
+            <strong>Overall Plagiarism</strong>
+            <span style='color: " . ($plagPercent > 70 ? '#f44336' : ($plagPercent > 30 ? '#ff9800' : '#4CAF50')) . ";'>{$plagPercent}%</span>
+        </div>
+        <div class='summary-item'>
+            <strong>Exact Match</strong>
+            <span>{$exact}%</span>
+        </div>
+        <div class='summary-item'>
+            <strong>Partial Match</strong>
+            <span>{$partial}%</span>
+        </div>
+    </div>
+    
+    <h2>📝 Text Analysis with Highlighted Matches</h2>
+    <div class='text-section'>
+        <p>{$textContent}</p>
+    </div>
+    
+    <div style='margin-top: 30px;'>
+        <a class='back-btn' href='student_index.php'>← Back to Dashboard</a>
+        <a class='download-btn' href='download.php?id={$submissionId}'>📥 Download Report</a>
+    </div>
 </div>
-<h2>Text with highlighted matches</h2>
-<p>{$textContent}</p>
-<a class='download-btn' href='download.php?id={$submissionId}'>Download Report</a>
 </body>
 </html>";
 
 // Output report
 echo $reportHtml;
+?>
