@@ -1,5 +1,18 @@
 
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+require_once __DIR__ . '/../../Helpers/Csrf.php';
+use Helpers\Csrf;
 
+// Generate CSRF token
+$csrf_token = Csrf::token();
+
+// Get success/error messages
+$success_msg = $_GET['success'] ?? '';
+$error_msg = $_GET['error'] ?? '';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -56,7 +69,7 @@
         </div>
         
         <div class="signout-section">
-            <a href="?signout=true" style="text-decoration: none;">
+            <a href="/Plagirism_Detection_System/logout.php" style="text-decoration: none;">
                 <button class="btn-signout">🚪 Sign Out</button>
             </a>
         </div>
@@ -68,6 +81,18 @@
                 <h1>📚 Instructor Dashboard</h1>
                 <p>Review and manage student submissions</p>
             </div>
+
+            <?php if ($success_msg): ?>
+                <div class="alert alert-success" style="background: #dcfce7; color: #166534; padding: 12px; border-radius: 6px; margin-bottom: 20px;">
+                    <?php echo htmlspecialchars($success_msg); ?>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($error_msg): ?>
+                <div class="alert alert-error" style="background: #fee2e2; color: #991b1b; padding: 12px; border-radius: 6px; margin-bottom: 20px;">
+                    <?php echo htmlspecialchars($error_msg); ?>
+                </div>
+            <?php endif; ?>
             
             <div class="stats">
                 <div class="stat-card">
@@ -111,6 +136,24 @@
                                         <?php echo $submission['similarity'] ?? 0; ?>% Plagiarism
                                     </div>
                                 </div>
+                                <div class="submission-content">
+                                    <h4>📄 Document Title: <?php echo htmlspecialchars($submission['stored_name'] ?? 'N/A'); ?></h4>
+                                    <p><?php echo nl2br(htmlspecialchars(substr($submission['text_content'] ?? '', 0, 300))); ?><?php echo strlen($submission['text_content'] ?? '') > 300 ? '...' : ''; ?></p>
+                                </div>
+                                <?php if (!empty($submission['feedback'])): ?>
+                                    <div class="feedback-section" style="background: #f1f5f9; padding: 12px; border-radius: 6px; margin-top: 10px;">
+                                        <strong>Feedback:</strong>
+                                        <p><?php echo nl2br(htmlspecialchars($submission['feedback'])); ?></p>
+                                    </div>
+                                <?php endif; ?>
+                                <div class="actions" style="margin-top: 15px;">
+                                    <form method="POST" action="/Plagirism_Detection_System/instructor_actions.php" style="display: inline;">
+                                        <input type="hidden" name="_csrf" value="<?php echo $csrf_token; ?>">
+                                        <input type="hidden" name="action" value="restore">
+                                        <input type="hidden" name="submission_id" value="<?php echo $submission['id']; ?>">
+                                        <button type="submit" class="btn btn-restore">🔄 Restore</button>
+                                    </form>
+                                </div>
                             </div>
                         <?php endforeach; ?>
                     <?php endif; ?>
@@ -140,23 +183,69 @@
                                         </h3>
                                         <p>📧 <?php echo htmlspecialchars($submission['student_email']); ?> | 📅 <?php echo date('F j, Y g:i A', strtotime($submission['created_at'] ?? 'now')); ?></p>
                                     </div>
-                                    <div class="plagiarism-badge plagiarism-medium">
-                                        <?php echo $submission['similarity'] ?? 0; ?>% Plagiarism
+                                    <div class="plagiarism-badge <?php 
+                                        $similarity = $submission['similarity'] ?? 0;
+                                        echo $similarity <= 30 ? 'plagiarism-low' : ($similarity <= 70 ? 'plagiarism-medium' : 'plagiarism-high');
+                                    ?>">
+                                        <?php echo $similarity; ?>% Plagiarism
                                     </div>
                                 </div>
                                 <div class="submission-content">
-                                    <h4>📄 Document Title: <?php echo htmlspecialchars($submission['stored_name']); ?></h4>
+                                    <h4>📄 Document Title: <?php echo htmlspecialchars($submission['stored_name'] ?? 'N/A'); ?></h4>
                                     <p><?php echo nl2br(htmlspecialchars(substr($submission['text_content'] ?? '', 0, 300))); ?><?php echo strlen($submission['text_content'] ?? '') > 300 ? '...' : ''; ?></p>
                                 </div>
-                            </div>
-                            <form method="POST" style="display:inline;">
-                              <input type="hidden" name="submission_id" value="<?php echo $submission['id']; ?>">
-                              <input type="hidden" name="action" value="trash">
-                              <button type="submit" class="btn btn-trash" onclick="return confirm('Move this submission to trash?')">
-                             🗑️ Trash
-                             </button>
-                              </form>
 
+                                <?php if (!empty($submission['feedback'])): ?>
+                                    <div class="feedback-section" style="background: #f1f5f9; padding: 12px; border-radius: 6px; margin-top: 10px; margin-bottom: 15px;">
+                                        <strong>Your Feedback:</strong>
+                                        <p><?php echo nl2br(htmlspecialchars($submission['feedback'])); ?></p>
+                                    </div>
+                                <?php endif; ?>
+
+                                <div class="actions" style="margin-top: 15px; margin-bottom: 15px;">
+                                    <form method="POST" action="/Plagirism_Detection_System/instructor_actions.php" style="display: inline;">
+                                        <input type="hidden" name="_csrf" value="<?php echo $csrf_token; ?>">
+                                        <input type="hidden" name="action" value="accept">
+                                        <input type="hidden" name="submission_id" value="<?php echo $submission['id']; ?>">
+                                        <button type="submit" class="btn btn-accept" <?php echo ($submission['status'] ?? '') === 'accepted' ? 'disabled' : ''; ?>>✓ Accept</button>
+                                    </form>
+
+                                    <form method="POST" action="/Plagirism_Detection_System/instructor_actions.php" style="display: inline;">
+                                        <input type="hidden" name="_csrf" value="<?php echo $csrf_token; ?>">
+                                        <input type="hidden" name="action" value="reject">
+                                        <input type="hidden" name="submission_id" value="<?php echo $submission['id']; ?>">
+                                        <button type="submit" class="btn btn-reject" <?php echo ($submission['status'] ?? '') === 'rejected' ? 'disabled' : ''; ?>>✗ Reject</button>
+                                    </form>
+
+                                    <form method="POST" action="/Plagirism_Detection_System/instructor_actions.php" style="display: inline;">
+                                        <input type="hidden" name="_csrf" value="<?php echo $csrf_token; ?>">
+                                        <input type="hidden" name="action" value="delete">
+                                        <input type="hidden" name="submission_id" value="<?php echo $submission['id']; ?>">
+                                        <button type="submit" class="btn btn-delete" onclick="return confirm('Are you sure you want to move this submission to trash?');">🗑️ Delete</button>
+                                    </form>
+
+                                    <a href="/Plagirism_Detection_System/instructor_actions.php?action=view_report&id=<?php echo $submission['id']; ?>" target="_blank" class="btn btn-feedback" style="text-decoration: none; display: inline-block; padding: 10px 20px; background: #0891b2; color: white; border-radius: 6px; border: none; cursor: pointer;">📊 View Report</a>
+
+                                    <a href="/Plagirism_Detection_System/instructor_actions.php?action=download_report&id=<?php echo $submission['id']; ?>" class="btn btn-feedback" style="text-decoration: none; display: inline-block; padding: 10px 20px; background: #7c3aed; color: white; border-radius: 6px; border: none; cursor: pointer;">⬇️ Download Report</a>
+                                </div>
+
+                                <div class="feedback-section" style="margin-top: 15px;">
+                                    <form method="POST" action="/Plagirism_Detection_System/instructor_actions.php">
+                                        <input type="hidden" name="_csrf" value="<?php echo $csrf_token; ?>">
+                                        <input type="hidden" name="action" value="add_feedback">
+                                        <input type="hidden" name="submission_id" value="<?php echo $submission['id']; ?>">
+                                        <label for="feedback_<?php echo $submission['id']; ?>" style="display: block; margin-bottom: 8px; font-weight: 600;">Add/Update Feedback:</label>
+                                        <textarea 
+                                            id="feedback_<?php echo $submission['id']; ?>" 
+                                            name="feedback" 
+                                            class="feedback-textarea" 
+                                            placeholder="Enter your feedback for this submission..."
+                                            rows="4"
+                                        ><?php echo htmlspecialchars($submission['feedback'] ?? ''); ?></textarea>
+                                        <button type="submit" class="btn btn-feedback" style="margin-top: 10px;">💬 Save Feedback</button>
+                                    </form>
+                                </div>
+                            </div>
                         <?php endforeach; ?>
                     <?php endif; ?>
                 <?php endif; ?>

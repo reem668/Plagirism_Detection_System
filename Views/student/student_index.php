@@ -1,11 +1,17 @@
 <?php
 session_start();
 
-require_once __DIR__ . '../../../Helpers/Csrf.php';
-require_once __DIR__ . '../../../Controllers/SubmissionController.php';
+// Resolve project root (C:\xamppp\htdocs\Plagirism_Detection_System)
+$rootPath = dirname(dirname(__DIR__)); // Views/student -> Views -> project root
+
+// Core dependencies from project root
+require_once $rootPath . '/Helpers/Csrf.php';
+require_once $rootPath . '/Controllers/SubmissionController.php';
+require_once $rootPath . '/Models/Instructor.php';
 
 use Controllers\SubmissionController;
 use Helpers\Csrf;
+use Models\Instructor;
 
 // Only students can access
 if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'student') {
@@ -13,7 +19,18 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'student') {
     exit();
 }
 
+// DB connection for this view and the Instructor model
+require_once $rootPath . '/includes/db.php';
+
+// Ensure $conn is available and valid before using it
+if (!isset($conn) || !($conn instanceof mysqli)) {
+    die('Database connection not available. Please check includes/db.php configuration.');
+}
+
+// Controllers / Models
 $ctrl = new SubmissionController();
+$instructorModel = new Instructor($conn);
+$instructors = $instructorModel->getAllInstructors();
 
 // DELETE
 if (isset($_POST['delete_id'])) {
@@ -90,12 +107,18 @@ $username = $_SESSION['user_name'] ?? 'Student';
                     </select>
 
                     <div id="teacherDropdown" style="display:none;">
-                        <label for="teacherSelect">Teacher</label>
+                        <label for="teacherSelect">Instructor</label>
                         <select id="teacherSelect" name="teacherSelect">
-                            <option value="">-- Select a Teacher --</option>
-                            <option value="Mr. Ahmed">Mr. Ahmed</option>
-                            <option value="Ms. Fatma">Ms. Fatma</option>
-                            <option value="Dr. Khaled">Dr. Khaled</option>
+                            <option value="">-- Select an Instructor --</option>
+                            <?php if (!empty($instructors)): ?>
+                                <?php foreach ($instructors as $instructor): ?>
+                                    <option value="<?php echo htmlspecialchars($instructor['name']); ?>">
+                                        <?php echo htmlspecialchars($instructor['name']); ?> (<?php echo htmlspecialchars($instructor['email']); ?>)
+                                    </option>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <option value="">No instructors available</option>
+                            <?php endif; ?>
                         </select>
                     </div>
 
@@ -207,8 +230,29 @@ document.addEventListener('DOMContentLoaded', function(){
     // Teacher dropdown toggle
     const submissionType = document.getElementById('submissionType');
     const teacherDropdown = document.getElementById('teacherDropdown');
+    const teacherSelect = document.getElementById('teacherSelect');
+    const submissionForm = document.getElementById('submissionForm');
+    
     submissionType?.addEventListener('change', ()=> {
-        teacherDropdown.style.display = (submissionType.value==='specific') ? 'block' : 'none';
+        const isSpecific = submissionType.value === 'specific';
+        teacherDropdown.style.display = isSpecific ? 'block' : 'none';
+        // Make teacher field required only when specific teacher is selected
+        if (teacherSelect) {
+            teacherSelect.required = isSpecific;
+            if (!isSpecific) {
+                teacherSelect.value = '';
+            }
+        }
+    });
+    
+    // Form validation
+    submissionForm?.addEventListener('submit', (e) => {
+        const isSpecific = submissionType?.value === 'specific';
+        if (isSpecific && (!teacherSelect || !teacherSelect.value)) {
+            e.preventDefault();
+            alert('Please select an instructor for specific teacher submission.');
+            return false;
+        }
     });
 });
 </script>

@@ -32,7 +32,14 @@ class SubmissionController {
         if (!Csrf::verify($_POST['_csrf'] ?? '')) die('Invalid CSRF token');
 
         $text = Validator::sanitize($_POST['textInput'] ?? '');
-        $teacher = Validator::sanitize($_POST['teacherSelect'] ?? '');
+        $submissionType = $_POST['submissionType'] ?? 'general';
+        $teacher = '';
+        
+        // Only set teacher if submission type is 'specific' and teacher is selected
+        if ($submissionType === 'specific' && !empty($_POST['teacherSelect'])) {
+            $teacher = Validator::sanitize($_POST['teacherSelect']);
+        }
+        
         $userId = $_SESSION['user_id'] ?? 1;
 
         $fileInfo = null;
@@ -95,6 +102,7 @@ class SubmissionController {
      * Delete / restore
      */
     public function delete(int $id, int $userId){
+        // Soft delete via status column
         $stmt = $this->conn->prepare("UPDATE submissions SET status='deleted' WHERE id=? AND user_id=?");
         $stmt->bind_param("ii", $id, $userId);
         $stmt->execute();
@@ -102,6 +110,7 @@ class SubmissionController {
     }
 
     public function restore(int $id, int $userId){
+        // Restore to active status
         $stmt = $this->conn->prepare("UPDATE submissions SET status='active' WHERE id=? AND user_id=?");
         $stmt->bind_param("ii", $id, $userId);
         $stmt->execute();
