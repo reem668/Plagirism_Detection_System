@@ -126,7 +126,7 @@ class AuthMiddleware {
                 header("Location: {$this->baseUrl}/admin.php");
                 break;
             case 'instructor':
-                header("Location: {$this->baseUrl}/Views/instructor/Instructor.php");
+                header("Location: {$this->baseUrl}/Instructordashboard.php");
                 break;
             case 'student':
                 header("Location: {$this->baseUrl}/Views/student/student_index.php");
@@ -149,7 +149,7 @@ class AuthMiddleware {
                     header("Location: {$this->baseUrl}/admin.php");
                     break;
                 case 'instructor':
-                    header("Location: {$this->baseUrl}/Views/instructor/Instructor.php");
+                    header("Location: {$this->baseUrl}/Instructordashboard.php");
                     break;
                 case 'student':
                     header("Location: {$this->baseUrl}/Views/student/student_index.php");

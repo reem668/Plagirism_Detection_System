@@ -1,119 +1,230 @@
 <?php
+/**
+ * Protected Instructor Actions Handler
+ * Handles all instructor actions with authentication and authorization
+ * 
+ * Security Features:
+ * - Requires instructor authentication
+ * - Verifies instructor owns the submission
+ * - CSRF token validation
+ * - Input validation and sanitization
+ * - Audit logging
+ */
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+require_once __DIR__ . '/Helpers/SessionManager.php';
+require_once __DIR__ . '/Middleware/AuthMiddleware.php';
 require_once __DIR__ . '/Controllers/InstructorController.php';
 require_once __DIR__ . '/Helpers/Csrf.php';
+require_once __DIR__ . '/Helpers/Validator.php';
 
-use Controllers\InstructorController;
+use Helpers\SessionManager;
+use Middleware\AuthMiddleware;
 use Helpers\Csrf;
+use Helpers\Validator;
 
-// Verify instructor session
-$instructor_id = $_SESSION['user']['id'] ?? $_SESSION['user_id'] ?? null;
-if (!$instructor_id) {
-    header("Location: /Plagirism_Detection_System/signup.php");
+// Initialize authentication
+$session = SessionManager::getInstance();
+$auth = new AuthMiddleware();
+
+// CRITICAL: Require instructor role
+$auth->requireRole('instructor');
+
+// Get current authenticated instructor
+$currentUser = $auth->getCurrentUser();
+$instructor_id = $currentUser['id'];
+
+// Initialize controller
+$controller = new InstructorController();
+
+// Get action from request
+$action = $_GET['action'] ?? $_POST['action'] ?? '';
+
+// Validate action parameter
+if (empty($action)) {
+    header("Location: /Plagirism_Detection_System/Instructordashboard.php?error=" . urlencode('No action specified'));
     exit;
 }
 
-// Verify instructor role
-if (($_SESSION['user_role'] ?? '') !== 'instructor' && ($_SESSION['user']['role'] ?? '') !== 'instructor') {
-    http_response_code(403);
-    die('Access denied. Instructor privileges required.');
+// Log all instructor actions for audit trail
+function logInstructorAction($instructor_id, $action, $submission_id, $success) {
+    $logFile = __DIR__ . '/storage/logs/instructor_actions.log';
+    $logDir = dirname($logFile);
+    
+    if (!file_exists($logDir)) {
+        mkdir($logDir, 0755, true);
+    }
+    
+    $timestamp = date('Y-m-d H:i:s');
+    $status = $success ? 'SUCCESS' : 'FAILED';
+    $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    $logEntry = "[{$timestamp}] {$status} - Instructor ID: {$instructor_id}, Action: {$action}, Submission ID: {$submission_id}, IP: {$ip}\n";
+    
+    file_put_contents($logFile, $logEntry, FILE_APPEND);
 }
 
-$controller = new InstructorController();
-$action = $_GET['action'] ?? $_POST['action'] ?? '';
-
-// Handle GET requests
+// ============================================================
+// Handle GET requests (view and download actions)
+// ============================================================
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    $submission_id = (int)($_GET['id'] ?? 0);
+    
+    // Validate submission ID
+    if ($submission_id <= 0) {
+        logInstructorAction($instructor_id, $action, $submission_id, false);
+        header("Location: /Plagirism_Detection_System/Instructordashboard.php?error=" . urlencode('Invalid submission ID'));
+        exit;
+    }
+    
+    // Verify instructor owns this submission
+    require_once __DIR__ . '/Models/Instructor.php';
+    $instructorModel = new Models\Instructor();
+    
+    if (!$instructorModel->ownsSubmission($instructor_id, $submission_id)) {
+        logInstructorAction($instructor_id, $action, $submission_id, false);
+        http_response_code(403);
+        die('⛔ Access denied. You can only access submissions assigned to you.');
+    }
+    
     switch ($action) {
         case 'view_report':
-            $submission_id = (int)($_GET['id'] ?? 0);
-            if ($submission_id > 0) {
+            try {
                 $controller->viewReport($submission_id, $instructor_id);
-            } else {
-                header("Location: /Plagirism_Detection_System/Instructordashboard.php?error=invalid_id");
+                logInstructorAction($instructor_id, $action, $submission_id, true);
+            } catch (Exception $e) {
+                logInstructorAction($instructor_id, $action, $submission_id, false);
+                header("Location: /Plagirism_Detection_System/Instructordashboard.php?error=" . urlencode('Error viewing report: ' . $e->getMessage()));
                 exit;
             }
             break;
 
         case 'download_report':
-            $submission_id = (int)($_GET['id'] ?? 0);
-            if ($submission_id > 0) {
+            try {
                 $controller->downloadReport($submission_id, $instructor_id);
-            } else {
-                header("Location: /Plagirism_Detection_System/Instructordashboard.php?error=invalid_id");
+                logInstructorAction($instructor_id, $action, $submission_id, true);
+            } catch (Exception $e) {
+                logInstructorAction($instructor_id, $action, $submission_id, false);
+                header("Location: /Plagirism_Detection_System/Instructordashboard.php?error=" . urlencode('Error downloading report: ' . $e->getMessage()));
                 exit;
             }
             break;
 
         default:
-            header("Location: /Plagirism_Detection_System/Instructordashboard.php?error=invalid_action");
+            logInstructorAction($instructor_id, $action, $submission_id, false);
+            header("Location: /Plagirism_Detection_System/Instructordashboard.php?error=" . urlencode('Invalid action'));
             exit;
     }
 }
 
-// Handle POST requests
+// ============================================================
+// Handle POST requests (modify actions)
+// ============================================================
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Verify CSRF token
+    // CRITICAL: Verify CSRF token for all POST requests
     if (!Csrf::verify($_POST['_csrf'] ?? '')) {
-        header("Location: /Plagirism_Detection_System/Instructordashboard.php?error=csrf_invalid");
+        logInstructorAction($instructor_id, $action, 0, false);
+        header("Location: /Plagirism_Detection_System/Instructordashboard.php?error=" . urlencode('Security token validation failed. Please try again.'));
         exit;
     }
 
+    // Get and validate submission ID
     $submission_id = (int)($_POST['submission_id'] ?? 0);
+    
     if ($submission_id <= 0) {
-        header("Location: /Plagirism_Detection_System/Instructordashboard.php?error=invalid_id");
+        logInstructorAction($instructor_id, $action, $submission_id, false);
+        header("Location: /Plagirism_Detection_System/Instructordashboard.php?error=" . urlencode('Invalid submission ID'));
         exit;
+    }
+
+    // Verify instructor owns this submission
+    require_once __DIR__ . '/Models/Instructor.php';
+    $instructorModel = new Models\Instructor();
+    
+    if (!$instructorModel->ownsSubmission($instructor_id, $submission_id)) {
+        logInstructorAction($instructor_id, $action, $submission_id, false);
+        http_response_code(403);
+        die('⛔ Access denied. You can only modify submissions assigned to you.');
     }
 
     $success = false;
     $message = '';
 
+    // Process action
     switch ($action) {
         case 'accept':
             $success = $controller->acceptSubmission($submission_id, $instructor_id);
             $message = $success ? 'Submission accepted successfully.' : 'Failed to accept submission.';
+            logInstructorAction($instructor_id, $action, $submission_id, $success);
             break;
 
         case 'reject':
             $success = $controller->rejectSubmission($submission_id, $instructor_id);
             $message = $success ? 'Submission rejected successfully.' : 'Failed to reject submission.';
+            logInstructorAction($instructor_id, $action, $submission_id, $success);
             break;
 
         case 'delete':
             $success = $controller->deleteSubmission($submission_id, $instructor_id);
             $message = $success ? 'Submission moved to trash successfully.' : 'Failed to delete submission.';
+            logInstructorAction($instructor_id, $action, $submission_id, $success);
             break;
 
         case 'add_feedback':
+            // Validate feedback input
             $feedback = $_POST['feedback'] ?? '';
+            
             if (empty(trim($feedback))) {
                 $message = 'Feedback cannot be empty.';
+                $success = false;
+                logInstructorAction($instructor_id, $action, $submission_id, false);
             } else {
-                $success = $controller->addFeedback($submission_id, $instructor_id, $feedback);
-                $message = $success ? 'Feedback added successfully.' : 'Failed to add feedback.';
+                // Sanitize feedback
+                $feedback = Validator::sanitize($feedback);
+                
+                // Validate length (max 5000 characters)
+                if (strlen($feedback) > 5000) {
+                    $message = 'Feedback is too long. Maximum 5000 characters allowed.';
+                    $success = false;
+                    logInstructorAction($instructor_id, $action, $submission_id, false);
+                } else {
+                    $success = $controller->addFeedback($submission_id, $instructor_id, $feedback);
+                    $message = $success ? 'Feedback saved successfully.' : 'Failed to save feedback.';
+                    logInstructorAction($instructor_id, $action, $submission_id, $success);
+                }
             }
             break;
 
         case 'restore':
             $success = $controller->restoreSubmission($submission_id, $instructor_id);
             $message = $success ? 'Submission restored successfully.' : 'Failed to restore submission.';
+            logInstructorAction($instructor_id, $action, $submission_id, $success);
             break;
 
         default:
-            header("Location: /Plagirism_Detection_System/Instructordashboard.php?error=invalid_action");
-            exit;
+            $message = 'Invalid action specified.';
+            $success = false;
+            logInstructorAction($instructor_id, $action, $submission_id, false);
+            break;
     }
 
-    // Redirect with message
+    // Redirect with appropriate message
     $status = $success ? 'success' : 'error';
-    header("Location: /Plagirism_Detection_System/Instructordashboard.php?{$status}=" . urlencode($message));
+    $redirectUrl = "/Plagirism_Detection_System/Instructordashboard.php?{$status}=" . urlencode($message);
+    
+    // Preserve view parameter if it exists
+    if (isset($_POST['current_view'])) {
+        $redirectUrl .= "&view=" . urlencode($_POST['current_view']);
+    }
+    
+    header("Location: {$redirectUrl}");
     exit;
 }
 
-// If no action matched, redirect to dashboard
-header("Location: /Plagirism_Detection_System/Instructordashboard.php");
+// If no valid HTTP method matched, redirect to dashboard
+logInstructorAction($instructor_id, $action, 0, false);
+header("Location: /Plagirism_Detection_System/Instructordashboard.php?error=" . urlencode('Invalid request method'));
 exit;
-
+?>
