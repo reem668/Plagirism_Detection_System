@@ -1,17 +1,38 @@
 
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+/**
+ * Protected Instructor Dashboard View
+ * This file should only be accessed through Instructordashboard.php
+ * Additional security checks included
+ */
+
+// Security check - ensure this file is accessed through Instructordashboard.php
+if (!defined('INSTRUCTOR_ACCESS')) {
+    die('Direct access not permitted. Please access through Instructordashboard.php');
 }
-require_once __DIR__ . '/../../Helpers/Csrf.php';
-use Helpers\Csrf;
 
-// Generate CSRF token
-$csrf_token = Csrf::token();
+// Additional authentication verification
+require_once __DIR__ . '/../../Helpers/SessionManager.php';
+require_once __DIR__ . '/../../Middleware/AuthMiddleware.php';
 
-// Get success/error messages
-$success_msg = $_GET['success'] ?? '';
-$error_msg = $_GET['error'] ?? '';
+use Helpers\SessionManager;
+use Middleware\AuthMiddleware;
+
+$session = SessionManager::getInstance();
+$auth = new AuthMiddleware();
+
+// Double-check authentication
+if (!$session->isLoggedIn() || $session->getUserRole() !== 'instructor') {
+    header("Location: /Plagirism_Detection_System/signup.php");
+    exit();
+}
+
+// Verify the instructor owns the data being viewed
+$currentInstructor = $auth->getCurrentUser();
+if ($currentInstructor['id'] != $instructor_id) {
+    http_response_code(403);
+    die('Error: Unauthorized access. You can only view your own dashboard.');
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -21,8 +42,31 @@ $error_msg = $_GET['error'] ?? '';
     <title>Instructor Dashboard - Plagiarism Detector</title>
     <!-- Correct CSS path from root assets folder -->
     <link rel="stylesheet" href="/Plagirism_Detection_System/assets/css/Instructor.css">
+    <style>
+        /* Additional security styles */
+        .security-badge {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: #10b981;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 11px;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .security-badge::before {
+            content: "🔒";
+        }
+    </style>
 </head>
 <body>
+    <!-- Security badge indicator -->
+    <div class="security-badge">Secure Session</div>
+
     <div class="sidebar">
         <div class="sidebar-header">
             <h2>📚 Similyze</h2>
@@ -61,7 +105,7 @@ $error_msg = $_GET['error'] ?? '';
                 <?php foreach ($enrolled_students as $student): ?>
                     <div class="student-item">
                         <h4><?php echo htmlspecialchars($student['name']); ?></h4>
-                        <p><?php echo htmlspecialchars($student['id']); ?></p>
+                        <p class="student-id"><?php echo htmlspecialchars($student['id']); ?></p>
                         <p><?php echo htmlspecialchars($student['email']); ?></p>
                     </div>
                 <?php endforeach; ?>
@@ -83,14 +127,14 @@ $error_msg = $_GET['error'] ?? '';
             </div>
 
             <?php if ($success_msg): ?>
-                <div class="alert alert-success" style="background: #dcfce7; color: #166534; padding: 12px; border-radius: 6px; margin-bottom: 20px;">
-                    <?php echo htmlspecialchars($success_msg); ?>
+                <div class="alert alert-success" style="background: #dcfce7; color: #166534; padding: 12px; border-radius: 6px; margin: 20px 30px;">
+                    ✅ <?php echo htmlspecialchars($success_msg); ?>
                 </div>
             <?php endif; ?>
 
             <?php if ($error_msg): ?>
-                <div class="alert alert-error" style="background: #fee2e2; color: #991b1b; padding: 12px; border-radius: 6px; margin-bottom: 20px;">
-                    <?php echo htmlspecialchars($error_msg); ?>
+                <div class="alert alert-error" style="background: #fee2e2; color: #991b1b; padding: 12px; border-radius: 6px; margin: 20px 30px;">
+                    ❌ <?php echo htmlspecialchars($error_msg); ?>
                 </div>
             <?php endif; ?>
             
@@ -171,7 +215,13 @@ $error_msg = $_GET['error'] ?? '';
                                     <div class="student-info">
                                         <h3>
                                             <?php echo htmlspecialchars($submission['student_name']); ?>
-                                            <span class="status-badge">
+                                            <span class="status-badge <?php 
+                                                echo match($submission['status'] ?? '') {
+                                                    'accepted' => 'status-accepted',
+                                                    'rejected' => 'status-rejected',
+                                                    default => 'status-pending'
+                                                };
+                                            ?>">
                                                 <?php 
                                                 echo match($submission['status'] ?? '') {
                                                     'accepted' => '✓ Accepted',
@@ -252,5 +302,25 @@ $error_msg = $_GET['error'] ?? '';
             </div>
         </div>
     </div>
+
+    <!-- Security: Auto-logout notification -->
+    <script>
+        // Warn user before session expires
+        const SESSION_TIMEOUT = 3600000; // 1 hour in milliseconds
+        const WARNING_TIME = 300000; // 5 minutes before timeout
+
+        setTimeout(() => {
+            if (confirm('Your session will expire in 5 minutes. Do you want to continue?')) {
+                // Reload page to refresh session
+                window.location.reload();
+            }
+        }, SESSION_TIMEOUT - WARNING_TIME);
+
+        // Auto-logout after session expires
+        setTimeout(() => {
+            alert('Your session has expired. You will be redirected to login.');
+            window.location.href = '/Plagirism_Detection_System/logout.php';
+        }, SESSION_TIMEOUT);
+    </script>
 </body>
 </html>
