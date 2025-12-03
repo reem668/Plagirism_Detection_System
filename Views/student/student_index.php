@@ -169,11 +169,17 @@ $deletedSubmissions = $ctrl->getUserSubmissions($userId, 'deleted');
                     </div>
                 </div>
 
-                <?php if($submissionResult): ?>
-                    <a href="download.php?id=<?php echo $submissionResult['submission_id']; ?>" class="download-btn">
-                        Download Report
-                    </a>
+              <?php if($submissionResult): ?>
+                <?php if(!empty($submissionResult['alert_message'])): ?>
+                  <div class="alert-warning" style="background: #ff6b6b; color: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; font-weight: bold;">
+                    <?= htmlspecialchars($submissionResult['alert_message']) ?>
+                  </div>
                 <?php endif; ?>
+                <a href="download.php?id=<?php echo $submissionResult['submission_id']; ?>" class="download-btn">
+                  Download Report
+                </a>
+              <?php endif; ?>
+
             </aside>
 
         </div>

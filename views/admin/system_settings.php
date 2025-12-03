@@ -31,6 +31,8 @@ if (!$session->isLoggedIn() || $session->getUserRole() !== 'admin') {
 
   <div id="settingsNotification" class="notice" style="display:none;"></div>
 
+  <input type="hidden" id="csrfToken" value="<?= \Helpers\Csrf::token() ?>">
+
   <form id="settingsForm" onsubmit="saveSettings(event)" class="settings-form">
     <label>Max Upload File Size (MB)</label>
     <input type="number" id="maxUploadSize" name="upload_limit" min="1" max="1000" value="10" required>

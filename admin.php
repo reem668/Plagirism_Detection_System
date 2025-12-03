@@ -107,5 +107,20 @@ $currentUser = $auth->getCurrentUser();
   
   <script src="<?= BASE_URL ?>/assets/js/script.js"></script>
   <script src="<?= BASE_URL ?>/assets/js/admin.js"></script>
+  
+  <?php
+  // Load page-specific JS files
+  if ($page === 'dashboard') {
+    echo '<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>' . "\n";
+    echo '<script src="' . BASE_URL . '/assets/js/admin_dashboard.js"></script>' . "\n";
+  } elseif ($page === 'user_management') {
+    echo '<script src="' . BASE_URL . '/assets/js/admin_users.js"></script>' . "\n";
+  } elseif ($page === 'course_management') {
+    echo '<script src="' . BASE_URL . '/assets/js/admin_courses.js"></script>' . "\n";
+  } elseif ($page === 'system_settings') {
+    echo '<script src="' . BASE_URL . '/assets/js/admin_settings.js"></script>' . "\n";
+  }
+  // submissions_overview has inline script in the view file (needs CSRF token)
+  ?>
 </body>
 </html>
