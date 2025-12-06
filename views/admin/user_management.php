@@ -1,25 +1,25 @@
 <?php
 /**
- * Protected Admin User Management View
- * This file should only be accessed through admin.php
+ * Protected Admin User Management View - Enhanced with AJAX
+ * Features: Search, Pagination, AJAX CRUD operations
  */
 
-// Security check - ensure this file is accessed through admin.php
+// Security check
 if (!defined('ADMIN_ACCESS')) {
     die('Direct access not permitted. Please access through admin.php');
 }
 
-// Additional authentication verification
 require_once __DIR__ . '/../../Helpers/SessionManager.php';
 require_once __DIR__ . '/../../Middleware/AuthMiddleware.php';
+require_once __DIR__ . '/../../Helpers/Csrf.php';
 
 use Helpers\SessionManager;
 use Middleware\AuthMiddleware;
+use Helpers\Csrf;
 
 $session = SessionManager::getInstance();
 $auth = new AuthMiddleware();
 
-// Double-check authentication
 if (!$session->isLoggedIn() || $session->getUserRole() !== 'admin') {
     header("Location: /Plagirism_Detection_System/signup.php");
     exit();
@@ -27,72 +27,235 @@ if (!$session->isLoggedIn() || $session->getUserRole() !== 'admin') {
 ?>
 
 <section class="user-management">
-  <h2>User Management 👥</h2>
+  <div class="page-header">
+    <h2>👥 User Management</h2>
+    <button class="btn primary" onclick="openAddUserModal()">
+      <i class="fas fa-plus"></i> Add New User
+    </button>
+  </div>
 
+  <!-- Notification Area -->
   <div id="notification" class="notice" style="display:none;"></div>
 
-  <div class="filter-row">
-    <button class="btn active" onclick="filterUsers('all')">All</button>
-    <button class="btn" onclick="filterUsers('student')">Students</button>
-    <button class="btn" onclick="filterUsers('instructor')">Instructors</button>
-    <button class="btn" onclick="filterUsers('admin')">Admins</button>
+  <!-- Hidden CSRF Token -->
+  <input type="hidden" id="csrfToken" value="<?= Csrf::token() ?>">
+
+  <!-- Search and Filter Bar -->
+  <div class="search-filter-container">
+    <div class="search-box">
+      <i class="fas fa-search"></i>
+      <input type="text" 
+             id="searchInput" 
+             class="search-input" 
+             placeholder="Search by name or email..." 
+             onkeyup="handleSearch()">
+    </div>
+    
+    <div class="filter-buttons">
+      <button class="btn filter-btn active" onclick="filterByRole('all')" data-role="all">
+        All Users
+      </button>
+      <button class="btn filter-btn" onclick="filterByRole('student')" data-role="student">
+        <i class="fas fa-user-graduate"></i> Students
+      </button>
+      <button class="btn filter-btn" onclick="filterByRole('instructor')" data-role="instructor">
+        <i class="fas fa-chalkboard-teacher"></i> Instructors
+      </button>
+      <button class="btn filter-btn" onclick="filterByRole('admin')" data-role="admin">
+        <i class="fas fa-user-shield"></i> Admins
+      </button>
+    </div>
   </div>
 
-  <div class="add-user-form">
-    <h3>Add New User ➕</h3>
-    <form id="addUserForm" class="add-form" onsubmit="addUser(event)">
-      <input type="text" id="newName" placeholder="Full Name" required>
-      <input type="email" id="newEmail" placeholder="Email Address" required>
-      <select id="newRole" required>
-        <option value="">Select Role</option>
-        <option value="student">Student</option>
-        <option value="instructor">Instructor</option>
-        <option value="admin">Admin</option>
-      </select>
-      <button type="submit" class="btn primary">Add User</button>
-    </form>
+  <!-- Users Table -->
+  <div class="users-table-wrapper">
+    <div id="loadingSpinner" class="loading-spinner" style="display:none;">
+      <i class="fas fa-spinner fa-spin"></i> Loading users...
+    </div>
+    
+    <div id="userCardsContainer" class="user-cards">
+      <!-- Users will be loaded here via AJAX -->
+    </div>
+    
+    <div id="emptyState" class="empty-state" style="display:none;">
+      <i class="fas fa-users"></i>
+      <p>No users found</p>
+    </div>
   </div>
 
-  <div class="user-cards" id="userCardsContainer">
-    <!-- Users will be loaded here -->
+  <!-- Pagination -->
+  <div id="paginationContainer" class="pagination-container" style="display:none;">
+    <div class="pagination-info">
+      Showing <span id="showingFrom">0</span> to <span id="showingTo">0</span> of <span id="totalUsers">0</span> users
+    </div>
+    <div class="pagination-buttons" id="paginationButtons">
+      <!-- Pagination buttons will be generated here -->
+    </div>
   </div>
 </section>
 
-<!-- Edit User Modal -->
-<div id="editUserModal" class="modal" style="display: none;">
-  <div class="modal-content small">
+<!-- Add User Modal -->
+<div id="addUserModal" class="modal">
+  <div class="modal-content">
     <div class="modal-header">
-      <h3>✏️ Edit User</h3>
-      <button class="close-btn" onclick="closeEditModal()">&times;</button>
+      <h3><i class="fas fa-user-plus"></i> Add New User</h3>
+      <button class="close-btn" onclick="closeAddUserModal()">&times;</button>
     </div>
     <div class="modal-body">
-      <form id="editUserForm" onsubmit="saveUserEdit(event)">
-        <input type="hidden" id="edit_user_id">
-        
-        <label>Full Name</label>
-        <input type="text" id="edit_name" class="edit-input" required>
+      <form id="addUserForm" onsubmit="submitAddUser(event)">
+        <div class="form-group">
+          <label for="addName">
+            <i class="fas fa-user"></i> Full Name
+          </label>
+          <input type="text" 
+                 id="addName" 
+                 name="name" 
+                 class="form-input" 
+                 placeholder="Enter full name" 
+                 required 
+                 minlength="3">
+        </div>
 
-        <label>Email</label>
-        <input type="email" id="edit_email" class="edit-input" required>
+        <div class="form-group">
+          <label for="addEmail">
+            <i class="fas fa-envelope"></i> Email Address
+          </label>
+          <input type="email" 
+                 id="addEmail" 
+                 name="email" 
+                 class="form-input" 
+                 placeholder="Enter email address" 
+                 required>
+        </div>
 
-        <label>Role</label>
-        <select id="edit_role" class="edit-input" required>
-          <option value="student">Student</option>
-          <option value="instructor">Instructor</option>
-          <option value="admin">Admin</option>
-        </select>
+        <div class="form-group">
+          <label for="addPassword">
+            <i class="fas fa-lock"></i> Password
+          </label>
+          <input type="password" 
+                 id="addPassword" 
+                 name="password" 
+                 class="form-input" 
+                 placeholder="Enter password (min 8 chars)" 
+                 required 
+                 minlength="8">
+          <small class="form-hint">Must contain uppercase, number, and special character</small>
+        </div>
 
-        <label>Status</label>
-        <select id="edit_status" class="edit-input" required>
-          <option value="active">Active</option>
-          <option value="banned">Banned</option>
-        </select>
+        <div class="form-group">
+          <label for="addRole">
+            <i class="fas fa-user-tag"></i> Role
+          </label>
+          <select id="addRole" name="role" class="form-input" required>
+            <option value="">Select Role</option>
+            <option value="student">Student</option>
+            <option value="instructor">Instructor</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
 
-        <div style="margin-top: 20px; display: flex; gap: 10px;">
-          <button type="submit" class="btn primary">💾 Save Changes</button>
-          <button type="button" class="btn" onclick="closeEditModal()">Cancel</button>
+        <div class="modal-actions">
+          <button type="submit" class="btn primary">
+            <i class="fas fa-save"></i> Add User
+          </button>
+          <button type="button" class="btn" onclick="closeAddUserModal()">
+            Cancel
+          </button>
         </div>
       </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit User Modal -->
+<div id="editUserModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3><i class="fas fa-edit"></i> Edit User</h3>
+      <button class="close-btn" onclick="closeEditUserModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="editUserForm" onsubmit="submitEditUser(event)">
+        <input type="hidden" id="editUserId" name="userId">
+        
+        <div class="form-group">
+          <label for="editName">
+            <i class="fas fa-user"></i> Full Name
+          </label>
+          <input type="text" 
+                 id="editName" 
+                 name="name" 
+                 class="form-input" 
+                 required 
+                 minlength="3">
+        </div>
+
+        <div class="form-group">
+          <label for="editEmail">
+            <i class="fas fa-envelope"></i> Email Address
+          </label>
+          <input type="email" 
+                 id="editEmail" 
+                 name="email" 
+                 class="form-input" 
+                 required>
+        </div>
+
+        <div class="form-group">
+          <label for="editRole">
+            <i class="fas fa-user-tag"></i> Role
+          </label>
+          <select id="editRole" name="role" class="form-input" required>
+            <option value="student">Student</option>
+            <option value="instructor">Instructor</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="editStatus">
+            <i class="fas fa-toggle-on"></i> Status
+          </label>
+          <select id="editStatus" name="status" class="form-input" required>
+            <option value="active">Active</option>
+            <option value="banned">Banned</option>
+          </select>
+        </div>
+
+        <div class="modal-actions">
+          <button type="submit" class="btn primary">
+            <i class="fas fa-save"></i> Save Changes
+          </button>
+          <button type="button" class="btn" onclick="closeEditUserModal()">
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteUserModal" class="modal">
+  <div class="modal-content small">
+    <div class="modal-header">
+      <h3><i class="fas fa-exclamation-triangle"></i> Confirm Delete</h3>
+      <button class="close-btn" onclick="closeDeleteUserModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p>Are you sure you want to delete this user?</p>
+      <p class="warning-text">
+        <strong>Warning:</strong> This action cannot be undone. All user data will be permanently deleted.
+      </p>
+      <input type="hidden" id="deleteUserId">
+    </div>
+    <div class="modal-actions">
+      <button class="btn danger" onclick="confirmDeleteUser()">
+        <i class="fas fa-trash"></i> Yes, Delete
+      </button>
+      <button class="btn" onclick="closeDeleteUserModal()">
+        Cancel
+      </button>
     </div>
   </div>
 </div>
