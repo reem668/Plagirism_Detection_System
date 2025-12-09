@@ -185,7 +185,7 @@ function getCourseById($conn, $id) {
               <td><?= htmlspecialchars($sub['title'] ?? $sub['stored_name'] ?? 'Untitled') ?></td>
               <td>
                 <span class="badge">
-                  <?= htmlspecialchars($sub['course_code'] ?? 'N/A') ?>
+                  <?= htmlspecialchars($sub['course_id'] ?? 'N/A') ?>
                 </span>
               </td>
               <td>
