@@ -37,34 +37,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Handle DELETE action
+// Handle DELETE action
 if (isset($_POST['delete_id'])) {
-    // Verify ownership before deleting
-    if ($auth->ownsResource($_POST['delete_id'])) {
-        $ctrl->delete($_POST['delete_id'], $userId);
-        header("Location: student_index.php");
-        exit;
-    } else {
-        die('Unauthorized: You can only delete your own submissions.');
-    }
+    $ctrl->delete($_POST['delete_id'], $userId);
+    header("Location: student_index.php");
+    exit;
 }
 
 // Handle RESTORE action
 if (isset($_POST['restore_id'])) {
-    // Verify ownership before restoring
-    if ($auth->ownsResource($_POST['restore_id'])) {
-        $ctrl->restore($_POST['restore_id'], $userId);
-        header("Location: student_index.php");
-        exit;
-    } else {
-        die('Unauthorized: You can only restore your own submissions.');
-    }
+    $ctrl->restore($_POST['restore_id'], $userId);
+    header("Location: student_index.php");
+    exit;
 }
 
 // Handle SUBMISSION
 $submissionResult = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete_id']) && !isset($_POST['restore_id'])) {
-    // Additional validation: ensure user_id in submission matches authenticated user
-    $_POST['user_id'] = $userId; // Force correct user ID
+    $_POST['user_id'] = $userId;
     $submissionResult = $ctrl->submit();
 }
 
@@ -94,7 +84,7 @@ try {
     }
 } catch (Exception $e) {
     // Fallback: try direct database connection
-    $rootPath = dirname(dirname(__DIR__));
+    $rootPath = dirname(dirname(_DIR_));
     require_once $rootPath . '/includes/db.php';
     if (isset($conn) && is_object($conn) && method_exists($conn, 'query')) {
         $instructorQuery = $conn->query("SELECT id, name, email FROM users WHERE role='instructor' AND status='active' ORDER BY name ASC");
@@ -150,7 +140,7 @@ try {
                 <span class="notification-badge" style="background: #ef4444; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; position: absolute; top: -5px; right: -5px; min-width: 18px; text-align: center; line-height: 14px; font-weight: bold;"><?= $notificationCount ?></span>
             <?php endif; ?>
         </a>
-        <a href="#" id="trashBtn" data-tooltip="Trash">🗑️</a>
+        <a href="#" id="trashBtn" data-tooltip="Trash">🗑</a>
     </div>
     <a href="<?= htmlspecialchars('../../logout.php', ENT_QUOTES) ?>" class="logout" data-tooltip="Logout">↻</a>
 </nav>
@@ -196,7 +186,6 @@ try {
 
                     <button type="submit">Submit</button>
                 </form>
-                <?php endif; ?>
             </div>
 
             <!-- Plagiarism Wheel -->
@@ -225,10 +214,7 @@ try {
 
               <?php if($submissionResult): ?>
                 <?php if(!empty($submissionResult['alert_message'])): ?>
-                  <div class="alert-warning" id="plagiarismAlert" style="background: #ff6b6b; color: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; font-weight: bold; position: relative;">
-                    <button type="button" id="closePlagiarismAlert" style="position:absolute;right:10px;top:8px;background:transparent;border:none;color:white;font-size:18px;cursor:pointer;line-height:1;">
-                      &times;
-                    </button>
+                  <div class="alert-warning" style="background: #ff6b6b; color: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; font-weight: bold;">
                     <?= htmlspecialchars($submissionResult['alert_message']) ?>
                   </div>
                 <?php endif; ?>
@@ -312,7 +298,7 @@ try {
                 <form method="POST" style="display:inline;">
                     <input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES) ?>">
                     <input type="hidden" name="delete_id" value="<?= $sub['id'] ?>">
-                    <button type="submit" class="btn-delete" onclick="return confirm('Move to trash?')" style="margin-top: 10px;">🗑️ Delete</button>
+                    <button type="submit" class="btn-delete" onclick="return confirm('Move to trash?')" style="margin-top: 10px;">🗑 Delete</button>
                 </form>
             </div>
         <?php endforeach; ?>
@@ -444,7 +430,7 @@ try {
                     <strong style="color: #166534;">📊 Detailed Report Available</strong>
                     <div style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;">
                         <a href="view_report.php?id=<?= $sub['id'] ?>" target="_blank" style="display: inline-block; padding: 8px 16px; background: #10b981; color: white; text-decoration: none; border-radius: 6px; font-size: 14px; font-weight: 500;">
-                            👁️ View Report
+                            👁 View Report
                         </a>
                         <a href="download.php?id=<?= $sub['id'] ?>" style="display: inline-block; padding: 8px 16px; background: #3b82f6; color: white; text-decoration: none; border-radius: 6px; font-size: 14px; font-weight: 500;">
                             📥 Download Report
@@ -528,8 +514,8 @@ document.addEventListener('DOMContentLoaded', function(){
     });
 
     // No auto-selection needed - instructor selection is independent
-});
-</script>
+ });
+ </script>
 
 </body>
 </html>
