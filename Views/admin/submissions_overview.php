@@ -74,7 +74,6 @@ function getCourseById($conn, $id) {
 ?>
 
 <section class="submissions-overview">
-  <h2>Submissions Overview 📄</h2>
   <h2>Submissions Overview ðŸ“„</h2>
 
   <!-- Statistics Cards -->
@@ -119,7 +118,6 @@ function getCourseById($conn, $id) {
     <input type="text" 
            name="search" 
            class="search-bar" 
-           placeholder="🔍 Search by student name or title..." 
            placeholder="ðŸ” Search by student name or title..." 
            value="<?= htmlspecialchars($filters['search']) ?>">
     
@@ -187,6 +185,7 @@ function getCourseById($conn, $id) {
               <td><?= htmlspecialchars($sub['title'] ?? $sub['stored_name'] ?? 'Untitled') ?></td>
               <td>
                 <span class="badge">
+                  <?= htmlspecialchars($sub['course_id'] ?? 'N/A') ?>
                 </span>
               </td>
               <td>
@@ -197,7 +196,6 @@ function getCourseById($conn, $id) {
               </td>
               <td>
                 <span class="similarity-score <?= $scoreClass ?>">
-                  <?= $sub['similarity'] !== null ? htmlspecialchars($sub['similarity']) . '%' : '—' ?>
                   <?= $sub['similarity'] !== null ? htmlspecialchars($sub['similarity']) . '%' : 'â€”' ?>
                 </span>
               </td>
@@ -208,11 +206,9 @@ function getCourseById($conn, $id) {
               </td>
               <td>
                 <button class="btn small" onclick="viewSubmissionDetails(<?= $sub['id'] ?>)">
-                  👁️ View
                   ðŸ‘ï¸ View
                 </button>
                 <button class="btn small danger" onclick="deleteSubmission(<?= $sub['id'] ?>)">
-                  🗑️
                   ðŸ—‘ï¸
                 </button>
               </td>
@@ -322,7 +318,6 @@ function getCourseById($conn, $id) {
 
     return '' +
     '<div class="submission-details-section">' +
-      '<h4>📋 Document Information</h4>' +
       '<h4>ðŸ“‹ Document Information</h4>' +
       '<div class="info-grid">' +
         '<div class="info-item">' +
