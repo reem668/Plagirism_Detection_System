@@ -182,7 +182,6 @@ class AdminSubmissionController {
                        u.name as student_name, 
                        u.email as student_email,
                        c.id as course_id,
-                       c.id as course_code,
                        c.name as course_name,
                        i.name as instructor_name,
                        i.email as instructor_email

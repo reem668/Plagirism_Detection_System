@@ -75,6 +75,7 @@ function getCourseById($conn, $id) {
 
 <section class="submissions-overview">
   <h2>Submissions Overview 📄</h2>
+  <h2>Submissions Overview ðŸ“„</h2>
 
   <!-- Statistics Cards -->
   <div class="stats-cards">
@@ -119,6 +120,7 @@ function getCourseById($conn, $id) {
            name="search" 
            class="search-bar" 
            placeholder="🔍 Search by student name or title..." 
+           placeholder="ðŸ” Search by student name or title..." 
            value="<?= htmlspecialchars($filters['search']) ?>">
     
     <select name="status" class="filter-select">
@@ -197,6 +199,7 @@ function getCourseById($conn, $id) {
               <td>
                 <span class="similarity-score <?= $scoreClass ?>">
                   <?= $sub['similarity'] !== null ? htmlspecialchars($sub['similarity']) . '%' : '—' ?>
+                  <?= $sub['similarity'] !== null ? htmlspecialchars($sub['similarity']) . '%' : 'â€”' ?>
                 </span>
               </td>
               <td>
@@ -207,9 +210,11 @@ function getCourseById($conn, $id) {
               <td>
                 <button class="btn small" onclick="viewSubmissionDetails(<?= $sub['id'] ?>)">
                   👁️ View
+                  ðŸ‘ï¸ View
                 </button>
                 <button class="btn small danger" onclick="deleteSubmission(<?= $sub['id'] ?>)">
                   🗑️
+                  ðŸ—‘ï¸
                 </button>
               </td>
             </tr>
@@ -244,6 +249,7 @@ function getCourseById($conn, $id) {
   <div class="modal-content small">
     <div class="modal-header">
       <h3>🗑️ Delete Submission</h3>
+      <h3>ðŸ—‘ï¸ Delete Submission</h3>
       <button class="close-btn" onclick="this.closest('.modal').style.display='none'">&times;</button>
     </div>
     <div class="modal-body">
@@ -319,6 +325,7 @@ function getCourseById($conn, $id) {
     return '' +
     '<div class="submission-details-section">' +
       '<h4>📋 Document Information</h4>' +
+      '<h4>ðŸ“‹ Document Information</h4>' +
       '<div class="info-grid">' +
         '<div class="info-item">' +
           '<label>Submission ID:</label>' +
@@ -337,6 +344,7 @@ function getCourseById($conn, $id) {
 
     '<div class="submission-details-section">' +
       '<h4>👤 Student Information</h4>' +
+      '<h4>ðŸ‘¤ Student Information</h4>' +
       '<div class="info-grid">' +
         '<div class="info-item">' +
           '<label>Student Name:</label>' +
@@ -351,6 +359,7 @@ function getCourseById($conn, $id) {
 
     '<div class="submission-details-section">' +
       '<h4>📊 Plagiarism Analysis</h4>' +
+      '<h4>ðŸ“Š Plagiarism Analysis</h4>' +
       '<div class="similarity-display">' +
         '<div class="similarity-info">' +
           '<div class="info-item">' +
