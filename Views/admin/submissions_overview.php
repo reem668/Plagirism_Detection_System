@@ -34,14 +34,19 @@ use Controllers\AdminSubmissionController;
 // Initialize controller
 $adminController = new AdminSubmissionController();
 
-// Get filters from query string
+// Get filters from query string with validation
 $filters = [
     'status' => $_GET['status'] ?? '',
     'risk' => $_GET['risk'] ?? '',
     'search' => $_GET['search'] ?? '',
     'limit' => 50,
-    'offset' => $_GET['offset'] ?? 0
+    'offset' => isset($_GET['offset']) && is_numeric($_GET['offset']) ? (int)$_GET['offset'] : 0
 ];
+
+// Sanitize filter inputs
+$filters['status'] = in_array($filters['status'], ['completed', 'processing', 'uploaded', 'failed', '']) ? $filters['status'] : '';
+$filters['risk'] = in_array($filters['risk'], ['low', 'medium', 'high', '']) ? $filters['risk'] : '';
+$filters['search'] = htmlspecialchars(strip_tags($filters['search']), ENT_QUOTES, 'UTF-8');
 
 // Handle CSV export
 if (isset($_GET['export']) && $_GET['export'] === 'csv') {
@@ -57,6 +62,7 @@ $stats = $adminController->getStatistics();
 require_once dirname(__DIR__, 2) . '/includes/db.php';
 
 function getUserById($conn, $id) {
+    if (!is_numeric($id)) return null;
     $stmt = $conn->prepare("SELECT * FROM users WHERE id = ?");
     $stmt->bind_param("i", $id);
     $stmt->execute();
@@ -65,12 +71,16 @@ function getUserById($conn, $id) {
 }
 
 function getCourseById($conn, $id) {
+    if (!is_numeric($id)) return null;
     $stmt = $conn->prepare("SELECT * FROM courses WHERE id = ?");
     $stmt->bind_param("i", $id);
     $stmt->execute();
     $result = $stmt->get_result();
     return $result->fetch_assoc();
 }
+
+// Generate CSRF token
+$csrfToken = \Helpers\Csrf::token();
 ?>
 
 <section class="submissions-overview">
@@ -81,7 +91,7 @@ function getCourseById($conn, $id) {
     <div class="stat-card">
       <div class="icon-wrap"><i class="fas fa-file-alt"></i></div>
       <div class="stat-body">
-        <div class="stat-number"><?= htmlspecialchars($stats['total']) ?></div>
+        <div class="stat-number"><?= htmlspecialchars($stats['total'] ?? 0, ENT_QUOTES, 'UTF-8') ?></div>
         <div class="stat-label">Total Submissions</div>
       </div>
     </div>
@@ -89,7 +99,7 @@ function getCourseById($conn, $id) {
     <div class="stat-card">
       <div class="icon-wrap"><i class="fas fa-chart-line"></i></div>
       <div class="stat-body">
-        <div class="stat-number"><?= htmlspecialchars($stats['avg_similarity']) ?>%</div>
+        <div class="stat-number"><?= htmlspecialchars($stats['avg_similarity'] ?? 0, ENT_QUOTES, 'UTF-8') ?>%</div>
         <div class="stat-label">Average Similarity</div>
       </div>
     </div>
@@ -97,7 +107,7 @@ function getCourseById($conn, $id) {
     <div class="stat-card">
       <div class="icon-wrap"><i class="fas fa-exclamation-triangle"></i></div>
       <div class="stat-body">
-        <div class="stat-number"><?= htmlspecialchars($stats['high_risk']) ?></div>
+        <div class="stat-number"><?= htmlspecialchars($stats['high_risk'] ?? 0, ENT_QUOTES, 'UTF-8') ?></div>
         <div class="stat-label">High-Risk (>70%)</div>
       </div>
     </div>
@@ -119,7 +129,7 @@ function getCourseById($conn, $id) {
            name="search" 
            class="search-bar" 
            placeholder="🔍 Search by student name or title..." 
-           value="<?= htmlspecialchars($filters['search']) ?>">
+           value="<?= htmlspecialchars($filters['search'], ENT_QUOTES, 'UTF-8') ?>">
     
     <select name="status" class="filter-select">
       <option value="">All Status</option>
@@ -173,42 +183,54 @@ function getCourseById($conn, $id) {
             <?php
               // Determine risk class
               $scoreClass = 'processing';
-              if ($sub['similarity'] !== null) {
-                  if ($sub['similarity'] <= 30) $scoreClass = 'low';
-                  elseif ($sub['similarity'] <= 70) $scoreClass = 'medium';
+              $similarity = $sub['similarity'] ?? null;
+              if ($similarity !== null) {
+                  if ($similarity <= 30) $scoreClass = 'low';
+                  elseif ($similarity <= 70) $scoreClass = 'medium';
                   else $scoreClass = 'high';
+              }
+              
+              // Format date safely
+              $createdAt = $sub['created_at'] ?? '';
+              $formattedDate = '';
+              if ($createdAt) {
+                  try {
+                      $formattedDate = date('M j, Y g:i A', strtotime($createdAt));
+                  } catch (Exception $e) {
+                      $formattedDate = 'Invalid date';
+                  }
               }
             ?>
             <tr>
-              <td><strong>#<?= htmlspecialchars($sub['id']) ?></strong></td>
-              <td><?= htmlspecialchars($sub['student_name'] ?? 'Unknown') ?></td>
-              <td><?= htmlspecialchars($sub['title'] ?? $sub['stored_name'] ?? 'Untitled') ?></td>
+              <td><strong>#<?= htmlspecialchars($sub['id'] ?? '', ENT_QUOTES, 'UTF-8') ?></strong></td>
+              <td><?= htmlspecialchars($sub['student_name'] ?? 'Unknown', ENT_QUOTES, 'UTF-8') ?></td>
+              <td><?= htmlspecialchars($sub['title'] ?? $sub['stored_name'] ?? 'Untitled', ENT_QUOTES, 'UTF-8') ?></td>
               <td>
                 <span class="badge">
-                  <?= htmlspecialchars($sub['course_code'] ?? 'N/A') ?>
+                  <?= htmlspecialchars($sub['course_id'] ?? 'N/A', ENT_QUOTES, 'UTF-8') ?>
                 </span>
               </td>
               <td>
-                <small><?= htmlspecialchars($sub['instructor_name'] ?? $sub['teacher'] ?? 'None') ?></small>
+                <small><?= htmlspecialchars($sub['instructor_name'] ?? $sub['teacher'] ?? 'None', ENT_QUOTES, 'UTF-8') ?></small>
               </td>
               <td>
-                <small><?= date('M j, Y g:i A', strtotime($sub['created_at'])) ?></small>
+                <small><?= htmlspecialchars($formattedDate, ENT_QUOTES, 'UTF-8') ?></small>
               </td>
               <td>
-                <span class="similarity-score <?= $scoreClass ?>">
-                  <?= $sub['similarity'] !== null ? htmlspecialchars($sub['similarity']) . '%' : '—' ?>
+                <span class="similarity-score <?= htmlspecialchars($scoreClass, ENT_QUOTES, 'UTF-8') ?>">
+                  <?= $similarity !== null ? htmlspecialchars($similarity, ENT_QUOTES, 'UTF-8') . '%' : '—' ?>
                 </span>
               </td>
               <td>
-                <span class="status-badge <?= htmlspecialchars($sub['status']) ?>">
-                  <?= ucfirst(htmlspecialchars($sub['status'])) ?>
+                <span class="status-badge <?= htmlspecialchars($sub['status'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                  <?= ucfirst(htmlspecialchars($sub['status'] ?? 'unknown', ENT_QUOTES, 'UTF-8')) ?>
                 </span>
               </td>
               <td>
-                <button class="btn small" onclick="viewSubmissionDetails(<?= $sub['id'] ?>)">
-                  👁️ View
+                <button class="btn small" onclick="viewSubmissionDetails(<?= (int)($sub['id'] ?? 0) ?>)">
+                  🔍 View
                 </button>
-                <button class="btn small danger" onclick="deleteSubmission(<?= $sub['id'] ?>)">
+                <button class="btn small danger" onclick="deleteSubmission(<?= (int)($sub['id'] ?? 0) ?>)">
                   🗑️
                 </button>
               </td>
@@ -220,7 +242,7 @@ function getCourseById($conn, $id) {
   </div>
 
   <!-- CSRF token for AJAX requests -->
-  <input type="hidden" id="csrfToken" value="<?= \Helpers\Csrf::token() ?>">
+  <input type="hidden" id="csrfToken" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
 </section>
 
 <!-- Side Panel for Submission Details -->
@@ -288,22 +310,34 @@ function getCourseById($conn, $id) {
     openPanel();
     panelBody.innerHTML = '<p>Loading...</p>';
 
+    // Validate submissionId
+    if (!submissionId || isNaN(submissionId)) {
+      panelBody.innerHTML = '<p style="color:red">Error: Invalid submission ID</p>';
+      return;
+    }
+
     fetch('ajax/get_submission_details.php?id=' + encodeURIComponent(submissionId))
-      .then(function (r) { return r.json(); })
+      .then(function (r) {
+        if (!r.ok) throw new Error('Network response was not ok');
+        return r.json();
+      })
       .then(function (data) {
-        if (data.success) {
+        if (data && data.success) {
           panelBody.innerHTML = renderSubmissionDetails(data.submission);
         } else {
-          panelBody.innerHTML = '<p style="color:red">Error: ' + (data.message || 'Failed to load submission') + '</p>';
+          panelBody.innerHTML = '<p style="color:red">Error: ' + (data && data.message || 'Failed to load submission') + '</p>';
         }
       })
-      .catch(function () {
-        panelBody.innerHTML = '<p style="color:red">Error loading submission.</p>';
+      .catch(function (error) {
+        console.error('Error:', error);
+        panelBody.innerHTML = '<p style="color:red">Error loading submission details.</p>';
       });
   };
 
   function renderSubmissionDetails(s) {
-    var sim = (s.similarity != null) ? s.similarity : 0;
+    if (!s) return '<p style="color:red">No submission data available.</p>';
+    
+    var sim = (s.similarity != null) ? parseFloat(s.similarity) : 0;
     var risk, riskText;
     if (sim <= 30) {
       risk = 'low';
@@ -316,21 +350,39 @@ function getCourseById($conn, $id) {
       riskText = 'High Risk';
     }
 
+    // Escape HTML to prevent XSS
+    function escapeHtml(text) {
+      if (text === null || text === undefined) return '';
+      var div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    var id = escapeHtml(s.id || '');
+    var title = escapeHtml(s.title || s.stored_name || s.original_filename || 'Untitled');
+    var studentName = escapeHtml(s.student_name || 'Unknown');
+    var studentEmail = escapeHtml(s.student_email || 'N/A');
+    var createdAt = s.created_at ? new Date(s.created_at).toLocaleString() : 'N/A';
+    var exactMatch = escapeHtml(s.exact_match || 0);
+    var partialMatch = escapeHtml(s.partial_match || 0);
+    var status = escapeHtml(s.status || 'unknown');
+    var statusCapitalized = status.charAt(0).toUpperCase() + status.slice(1);
+
     return '' +
     '<div class="submission-details-section">' +
-      '<h4>📋 Document Information</h4>' +
+      '<h4>📄 Document Information</h4>' +
       '<div class="info-grid">' +
         '<div class="info-item">' +
           '<label>Submission ID:</label>' +
-          '<span>#' + s.id + '</span>' +
+          '<span>#' + id + '</span>' +
         '</div>' +
         '<div class="info-item">' +
           '<label>Document Title:</label>' +
-          '<span>' + (s.title || s.stored_name || s.original_filename || 'Untitled') + '</span>' +
+          '<span>' + title + '</span>' +
         '</div>' +
         '<div class="info-item">' +
           '<label>Submission Date:</label>' +
-          '<span>' + new Date(s.created_at).toLocaleString() + '</span>' +
+          '<span>' + createdAt + '</span>' +
         '</div>' +
       '</div>' +
     '</div>' +
@@ -340,11 +392,11 @@ function getCourseById($conn, $id) {
       '<div class="info-grid">' +
         '<div class="info-item">' +
           '<label>Student Name:</label>' +
-          '<span>' + (s.student_name || 'Unknown') + '</span>' +
+          '<span>' + studentName + '</span>' +
         '</div>' +
         '<div class="info-item">' +
           '<label>Student Email:</label>' +
-          '<span>' + (s.student_email || 'N/A') + '</span>' +
+          '<span>' + studentEmail + '</span>' +
         '</div>' +
       '</div>' +
     '</div>' +
@@ -355,29 +407,29 @@ function getCourseById($conn, $id) {
         '<div class="similarity-info">' +
           '<div class="info-item">' +
             '<label>Similarity Score:</label>' +
-            '<span class="similarity-score ' + risk + '">' + (s.similarity != null ? s.similarity + '%' : 'Processing') + '</span>' +
+            '<span class="similarity-score ' + risk + '">' + (s.similarity != null ? sim + '%' : 'Processing') + '</span>' +
           '</div>' +
           '<div class="info-item">' +
             '<label>Exact Match:</label>' +
-            '<span>' + (s.exact_match || 0) + '%</span>' +
+            '<span>' + exactMatch + '%</span>' +
           '</div>' +
           '<div class="info-item">' +
             '<label>Partial Match:</label>' +
-            '<span>' + (s.partial_match || 0) + '%</span>' +
+            '<span>' + partialMatch + '%</span>' +
           '</div>' +
           '<div class="info-item">' +
             '<label>Status:</label>' +
-            '<span class="status-badge ' + s.status + '">' + s.status.charAt(0).toUpperCase() + s.status.slice(1) + '</span>' +
+            '<span class="status-badge ' + status + '">' + statusCapitalized + '</span>' +
           '</div>' +
         '</div>' +
       '</div>' +
     '</div>' +
 
     '<div class="panel-actions">' +
-      '<button class="btn primary" onclick="window.location.href=\'ajax/download_file.php?id=' + s.id + '\'">' +
+      '<button class="btn primary" onclick="window.location.href=\'ajax/download_file.php?id=' + id + '\'">' +
         '<i class="fas fa-download"></i> Download Report' +
       '</button>' +
-      '<button class="btn danger" onclick="openDeleteConfirm(' + s.id + ')">' +
+      '<button class="btn danger" onclick="openDeleteConfirm(' + id + ')">' +
         '<i class="fas fa-trash"></i> Delete' +
       '</button>' +
     '</div>';
@@ -387,6 +439,13 @@ function getCourseById($conn, $id) {
     var modal = getEl('deleteConfirmModal');
     var input = getEl('deleteConfirmId');
     if (!modal || !input) return;
+    
+    // Validate ID
+    if (!id || isNaN(id)) {
+      alert('Invalid submission ID');
+      return;
+    }
+    
     input.value = id;
     modal.style.display = 'flex';
   }
@@ -394,7 +453,10 @@ function getCourseById($conn, $id) {
   window.confirmDeleteSubmission = function () {
     var input = getEl('deleteConfirmId');
     var id = input ? input.value : '';
-    if (!id) return;
+    if (!id || isNaN(id)) {
+      alert('Invalid submission ID');
+      return;
+    }
 
     var csrfInput = getEl('csrfToken');
     var csrfToken = csrfInput ? csrfInput.value : '';
@@ -403,22 +465,33 @@ function getCourseById($conn, $id) {
       return;
     }
 
+    if (!confirm('Are you sure you want to delete this submission? This action cannot be undone.')) {
+      return;
+    }
+
     fetch('ajax/delete_submission.php', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      headers: { 
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-Requested-With': 'XMLHttpRequest'
+      },
       body: 'id=' + encodeURIComponent(id) + '&_csrf=' + encodeURIComponent(csrfToken)
     })
-      .then(function (r) { return r.json(); })
+      .then(function (r) {
+        if (!r.ok) throw new Error('Network response was not ok');
+        return r.json();
+      })
       .then(function (d) {
-        if (d.success) {
+        if (d && d.success) {
           closeDeleteModal();
           location.reload();
         } else {
-          alert('Error: ' + (d.message || 'Failed to delete submission'));
+          alert('Error: ' + (d && d.message || 'Failed to delete submission'));
         }
       })
-      .catch(function () {
-        alert('Error deleting submission.');
+      .catch(function (error) {
+        console.error('Error:', error);
+        alert('Error deleting submission. Please try again.');
       });
   };
 
@@ -428,6 +501,10 @@ function getCourseById($conn, $id) {
   }
 
   window.deleteSubmission = function (id) {
+    if (!id || isNaN(id)) {
+      alert('Invalid submission ID');
+      return;
+    }
     openDeleteConfirm(id);
   };
 
