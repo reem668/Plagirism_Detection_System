@@ -767,6 +767,18 @@ body{
   cursor: pointer;
 }
 
+.submissions-overview .search-bar,
+.submissions-overview .filter-select {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #eaf2ff;
+}
+
+.submissions-overview .filter-select option {
+  background: #0c1a33;
+  color: #eaf2ff;
+}
+
 .submissions-table-container {
   background: rgba(255,255,255,0.02);
   padding: 20px;

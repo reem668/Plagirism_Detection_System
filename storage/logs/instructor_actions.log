@@ -42,3 +42,12 @@
 [2025-12-10 00:34:51] SUCCESS - Instructor ID: 3, Action: add_feedback, Submission ID: 20, IP: ::1
 [2025-12-10 00:34:55] SUCCESS - Instructor ID: 3, Action: accept, Submission ID: 20, IP: ::1
 [2025-12-10 00:34:55] SUCCESS - Instructor ID: 3, Action: accept, Submission ID: 20, IP: ::1
+[2025-12-10 12:53:19] SUCCESS - Instructor ID: 2, Action: accept, Submission ID: 1, IP: ::1
+[2025-12-10 12:53:19] SUCCESS - Instructor ID: 2, Action: accept, Submission ID: 1, IP: ::1
+[2025-12-10 12:53:21] FAILED - Instructor ID: 2, Action: add_feedback, Submission ID: 1, IP: ::1
+[2025-12-10 12:53:27] SUCCESS - Instructor ID: 2, Action: add_feedback, Submission ID: 1, IP: ::1
+[2025-12-10 12:53:27] SUCCESS - Instructor ID: 2, Action: add_feedback, Submission ID: 1, IP: ::1
+[2025-12-10 09:36:16] SUCCESS - Instructor ID: 3, Action: accept, Submission ID: 22, IP: ::1
+[2025-12-10 09:36:16] SUCCESS - Instructor ID: 3, Action: accept, Submission ID: 22, IP: ::1
+[2025-12-10 09:36:27] SUCCESS - Instructor ID: 3, Action: add_feedback, Submission ID: 22, IP: ::1
+[2025-12-10 09:36:27] SUCCESS - Instructor ID: 3, Action: add_feedback, Submission ID: 22, IP: ::1

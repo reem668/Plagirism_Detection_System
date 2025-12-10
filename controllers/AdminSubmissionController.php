@@ -315,7 +315,7 @@ class AdminSubmissionController {
             'ID',
             'Student Name',
             'Student Email',
-            'Course Code',
+            'Course ID',
             'Course Name',
             'Instructor',
             'Similarity %',
