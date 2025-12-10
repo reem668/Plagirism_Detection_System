@@ -51,7 +51,12 @@ if (!$instructor) {
 
 // Fetch dashboard data
 $stats = $controller->getStats();
-$enrolled_students = $controller->getEnrolledStudents();
+$enrolled_students = $controller->getEnrolledStudents($instructor_id);
+$stats = [
+    'students_enrolled' => count($enrolled_students)
+];
+
+
 $submissions = $controller->getSubmissions($instructor_id);
 $trash = $controller->getTrash($instructor_id);
 

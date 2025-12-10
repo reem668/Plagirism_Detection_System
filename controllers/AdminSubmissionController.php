@@ -50,7 +50,7 @@ class AdminSubmissionController {
         $sql = "SELECT s.*, 
                        u.name as student_name, 
                        u.email as student_email,
-                       c.id as course_code,
+                       c.id as course_id,
                        c.name as course_name,
                        i.name as instructor_name
                 FROM submissions s
@@ -182,7 +182,6 @@ class AdminSubmissionController {
                        u.name as student_name, 
                        u.email as student_email,
                        c.id as course_id,
-                       c.id as course_code,
                        c.name as course_name,
                        i.name as instructor_name,
                        i.email as instructor_email
@@ -279,7 +278,7 @@ class AdminSubmissionController {
 
         $sql = "SELECT s.*, 
                        u.name as student_name,
-                       c.id as course_code
+                       c.id as course_id
                 FROM submissions s
                 LEFT JOIN users u ON s.user_id = u.id
                 LEFT JOIN courses c ON s.course_id = c.id
@@ -330,7 +329,7 @@ class AdminSubmissionController {
                 $sub['id'],
                 $sub['student_name'] ?? 'Unknown',
                 $sub['student_email'] ?? 'N/A',
-                $sub['course_code'] ?? 'N/A',
+                $sub['course_id'] ?? 'N/A',
                 $sub['course_name'] ?? 'N/A',
                 $sub['instructor_name'] ?? 'None',
                 $sub['similarity'] ?? 'Processing',

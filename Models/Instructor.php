@@ -37,25 +37,23 @@ class Instructor {
     public function getSubmissions($instructor_id) {
     $submissions = [];
 
-    // Fetch instructor name for this ID
-    $stmt = $this->conn->prepare("SELECT name FROM users WHERE id=?");
-    $stmt->bind_param("i", $instructor_id);
-    $stmt->execute();
-    $instructor_name = $stmt->get_result()->fetch_assoc()['name'];
-    $stmt->close();
-
-    // Fetch submissions where teacher matches this instructor (exclude deleted via status)
+    // Fetch submissions where course instructor_id matches this instructor
+    // Also include submissions where teacher name matches (for backward compatibility)
     $sql = "
         SELECT s.id, s.user_id, s.course_id, s.teacher, s.text_content, s.file_path, s.stored_name,
                s.file_size, s.similarity, s.status, s.created_at, s.feedback,
-               u.name AS student_name, u.email AS student_email
+               u.name AS student_name, u.email AS student_email,
+               c.name AS course_name
         FROM submissions s
         JOIN users u ON s.user_id = u.id
-        WHERE s.teacher = ? AND s.status <> 'deleted'
+        LEFT JOIN courses c ON s.course_id = c.id
+        WHERE (c.instructor_id = ? OR s.teacher = (SELECT name FROM users WHERE id = ? AND role='instructor'))
+        AND s.status <> 'deleted'
+        ORDER BY s.created_at DESC
     ";
 
     $stmt = $this->conn->prepare($sql);
-    $stmt->bind_param("s", $instructor_name);
+    $stmt->bind_param("ii", $instructor_id, $instructor_id);
     $stmt->execute();
     $result = $stmt->get_result();
 
@@ -69,23 +67,23 @@ class Instructor {
 public function getTrash($instructor_id) {
     $trash = [];
 
-    $stmt = $this->conn->prepare("SELECT name FROM users WHERE id=?");
-    $stmt->bind_param("i", $instructor_id);
-    $stmt->execute();
-    $instructor_name = $stmt->get_result()->fetch_assoc()['name'];
-    $stmt->close();
-
+    // Fetch deleted submissions where course instructor_id matches this instructor
+    // Also include submissions where teacher name matches (for backward compatibility)
     $sql = "
         SELECT s.id, s.user_id, s.course_id, s.teacher, s.text_content, s.file_path, s.stored_name,
                s.file_size, s.similarity, s.status, s.created_at, s.feedback,
-               u.name AS student_name, u.email AS student_email
+               u.name AS student_name, u.email AS student_email,
+               c.name AS course_name
         FROM submissions s
         JOIN users u ON s.user_id = u.id
-        WHERE s.teacher = ? AND s.status = 'deleted'
+        LEFT JOIN courses c ON s.course_id = c.id
+        WHERE (c.instructor_id = ? OR s.teacher = (SELECT name FROM users WHERE id = ? AND role='instructor'))
+        AND s.status = 'deleted'
+        ORDER BY s.created_at DESC
     ";
 
     $stmt = $this->conn->prepare($sql);
-    $stmt->bind_param("s", $instructor_name);
+    $stmt->bind_param("ii", $instructor_id, $instructor_id);
     $stmt->execute();
     $result = $stmt->get_result();
 
@@ -102,14 +100,40 @@ public function getTrash($instructor_id) {
         return $result->fetch_assoc();
     }
 
-    public function getEnrolledStudents() {
-        $students = [];
-        $result = $this->conn->query("SELECT * FROM users WHERE role='student'");
-        while ($row = $result->fetch_assoc()) {
-            $students[] = $row;
-        }
-        return $students;
+    /**
+ * Get students who are enrolled with a specific instructor.
+ * This will:
+ *  - return students who submitted to a course whose course.instructor_id = $instructor_id
+ *  - OR students who have a submission with s.teacher matching this instructor's name (backward compatibility)
+ * Results are DISTINCT so each student appears once.
+ */
+public function getEnrolledStudents($instructor_id)
+{
+    $students = [];
+
+    $sql = "
+        SELECT DISTINCT u.id, u.name, u.email
+        FROM submissions s
+        JOIN users u ON s.user_id = u.id
+        LEFT JOIN courses c ON s.course_id = c.id
+        WHERE c.instructor_id = ? 
+           OR s.teacher = (SELECT name FROM users WHERE id=? AND role='instructor')
+    ";
+
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bind_param("ii", $instructor_id, $instructor_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    while ($row = $result->fetch_assoc()) {
+        $students[] = $row;
     }
+
+    $stmt->close();
+    return $students;
+}
+
+
 
     /**
      * Get all instructors from database
@@ -145,25 +169,38 @@ public function getTrash($instructor_id) {
  * Verify if instructor owns a submission
  */
 public function ownsSubmission(int $instructor_id, int $submission_id): bool {
-    $stmt = $this->conn->prepare("SELECT name FROM users WHERE id = ?");
-    $stmt->bind_param("i", $instructor_id);
-    $stmt->execute();
-    $res = $stmt->get_result();
-    $instructor = $res->fetch_assoc();
-    $stmt->close();
-    
-    if (!$instructor) {
-        return false;
-    }
-    
-    $stmt = $this->conn->prepare("SELECT teacher FROM submissions WHERE id = ?");
+    // Check if submission belongs to a course taught by this instructor
+    // Or if teacher name matches (for backward compatibility)
+    $stmt = $this->conn->prepare("
+        SELECT s.id, s.teacher, c.instructor_id
+        FROM submissions s
+        LEFT JOIN courses c ON s.course_id = c.id
+        WHERE s.id = ?
+    ");
     $stmt->bind_param("i", $submission_id);
     $stmt->execute();
     $res = $stmt->get_result();
     $submission = $res->fetch_assoc();
     $stmt->close();
     
-    return $submission && $submission['teacher'] === $instructor['name'];
+    if (!$submission) {
+        return false;
+    }
+    
+    // Check if course instructor matches
+    if ($submission['instructor_id'] == $instructor_id) {
+        return true;
+    }
+    
+    // Check if teacher name matches (backward compatibility)
+    $stmt = $this->conn->prepare("SELECT name FROM users WHERE id = ? AND role='instructor'");
+    $stmt->bind_param("i", $instructor_id);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $instructor = $res->fetch_assoc();
+    $stmt->close();
+    
+    return $instructor && $submission['teacher'] === $instructor['name'];
 }
 
 }

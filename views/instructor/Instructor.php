@@ -181,6 +181,9 @@ if ($currentInstructor['id'] != $instructor_id) {
                                     </div>
                                 </div>
                                 <div class="submission-content">
+                                    <?php if (!empty($submission['course_name'])): ?>
+                                        <h4>📚 Course: <?php echo htmlspecialchars($submission['course_name']); ?></h4>
+                                    <?php endif; ?>
                                     <h4>📄 Document Title: <?php echo htmlspecialchars($submission['stored_name'] ?? 'N/A'); ?></h4>
                                     <p><?php echo nl2br(htmlspecialchars(substr($submission['text_content'] ?? '', 0, 300))); ?><?php echo strlen($submission['text_content'] ?? '') > 300 ? '...' : ''; ?></p>
                                 </div>
@@ -241,6 +244,9 @@ if ($currentInstructor['id'] != $instructor_id) {
                                     </div>
                                 </div>
                                 <div class="submission-content">
+                                    <?php if (!empty($submission['course_name'])): ?>
+                                        <h4>📚 Course: <?php echo htmlspecialchars($submission['course_name']); ?></h4>
+                                    <?php endif; ?>
                                     <h4>📄 Document Title: <?php echo htmlspecialchars($submission['stored_name'] ?? 'N/A'); ?></h4>
                                     <p><?php echo nl2br(htmlspecialchars(substr($submission['text_content'] ?? '', 0, 300))); ?><?php echo strlen($submission['text_content'] ?? '') > 300 ? '...' : ''; ?></p>
                                 </div>

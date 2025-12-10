@@ -37,6 +37,12 @@ $auth->requireRole('instructor');
 $currentUser = $auth->getCurrentUser();
 $instructor_id = $currentUser['id'];
 
+// Initialize database connection first
+require_once __DIR__ . '/includes/db.php';
+if (!isset($conn) || !$conn) {
+    die("Database connection failed. Please check your database configuration.");
+}
+
 // Initialize controller
 $controller = new InstructorController();
 
@@ -80,8 +86,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     }
     
     // Verify instructor owns this submission
+    // Connection already initialized at top of file
     require_once __DIR__ . '/Models/Instructor.php';
-    $instructorModel = new Models\Instructor();
+    $instructorModel = new Models\Instructor($conn);
     
     if (!$instructorModel->ownsSubmission($instructor_id, $submission_id)) {
         logInstructorAction($instructor_id, $action, $submission_id, false);
@@ -140,8 +147,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // Verify instructor owns this submission
+    // Connection already initialized at top of file
     require_once __DIR__ . '/Models/Instructor.php';
-    $instructorModel = new Models\Instructor();
+    $instructorModel = new Models\Instructor($conn);
     
     if (!$instructorModel->ownsSubmission($instructor_id, $submission_id)) {
         logInstructorAction($instructor_id, $action, $submission_id, false);
