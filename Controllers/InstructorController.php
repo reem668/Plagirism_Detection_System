@@ -99,7 +99,7 @@ class InstructorController {
         }
 
         $stats = $this->instructorModel->getStats();
-       $enrolled_students = $controller->getEnrolledStudents($instructor_id);
+       $enrolled_students = $this->getEnrolledStudents($instructor_id);
         $submissions = $this->instructorModel->getSubmissions($instructor_id);
         $trash = $this->instructorModel->getTrash($instructor_id);
 
