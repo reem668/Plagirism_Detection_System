@@ -12,22 +12,9 @@ class Settings {
     }
 
     /**
-     * Check if system_settings table exists
-     */
-    private function tableExists(): bool {
-        $result = $this->conn->query("SHOW TABLES LIKE 'system_settings'");
-        return $result && $result->num_rows > 0;
-    }
-
-    /**
      * Get all settings
      */
     public function getAll(): array {
-        // If table doesn't exist, return defaults
-        if (!$this->tableExists()) {
-            return $this->getDefaults();
-        }
-        
         $result = $this->conn->query("SELECT setting_key, setting_value FROM system_settings");
         $settings = [];
         
@@ -49,70 +36,36 @@ class Settings {
      * Get a specific setting value
      */
     public function get(string $key, $default = null) {
-        // If table doesn't exist, return default or value from defaults
-        if (!$this->tableExists()) {
-            $defaults = $this->getDefaults();
-            return $defaults[$key] ?? $default;
-        }
+        $stmt = $this->conn->prepare("SELECT setting_value FROM system_settings WHERE setting_key = ?");
+        $stmt->bind_param("s", $key);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $stmt->close();
         
-        try {
-            $stmt = $this->conn->prepare("SELECT setting_value FROM system_settings WHERE setting_key = ?");
-            if (!$stmt) {
-                return $default;
-            }
-            
-            $stmt->bind_param("s", $key);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            $row = $result->fetch_assoc();
-            $stmt->close();
-            
-            return $row ? $row['setting_value'] : $default;
-        } catch (\Exception $e) {
-            // If query fails, return default or value from defaults
-            $defaults = $this->getDefaults();
-            return $defaults[$key] ?? $default;
-        }
+        return $row ? $row['setting_value'] : $default;
     }
 
     /**
      * Set/Update a setting
      */
     public function set(string $key, $value): bool {
-        // If table doesn't exist, return false
-        if (!$this->tableExists()) {
-            return false;
-        }
+        $stmt = $this->conn->prepare("
+            INSERT INTO system_settings (setting_key, setting_value) 
+            VALUES (?, ?) 
+            ON DUPLICATE KEY UPDATE setting_value = ?
+        ");
+        $stmt->bind_param("sss", $key, $value, $value);
+        $success = $stmt->execute();
+        $stmt->close();
         
-        try {
-            $stmt = $this->conn->prepare("
-                INSERT INTO system_settings (setting_key, setting_value) 
-                VALUES (?, ?) 
-                ON DUPLICATE KEY UPDATE setting_value = ?
-            ");
-            if (!$stmt) {
-                return false;
-            }
-            
-            $stmt->bind_param("sss", $key, $value, $value);
-            $success = $stmt->execute();
-            $stmt->close();
-            
-            return $success;
-        } catch (\Exception $e) {
-            return false;
-        }
+        return $success;
     }
 
     /**
      * Update multiple settings at once
      */
     public function updateMultiple(array $settings): bool {
-        // If table doesn't exist, return false
-        if (!$this->tableExists()) {
-            return false;
-        }
-        
         $this->conn->begin_transaction();
         
         try {

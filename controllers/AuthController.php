@@ -1,26 +1,17 @@
 <?php
 /**
  * Authentication Controller - Handles Login, Signup & Forgot Password
- * Updated with SessionManager and AuthMiddleware integration
  */
+session_start();
 
 require_once __DIR__ . '/../Models/User.php';
-require_once __DIR__ . '/../Helpers/SessionManager.php';
-require_once __DIR__ . '/../Middleware/AuthMiddleware.php';
-
-use Helpers\SessionManager;
-use Middleware\AuthMiddleware;
 
 class AuthController {
     
     private $user;
-    private $session;
-    private $auth;
     
     public function __construct() {
         $this->user = new User();
-        $this->session = SessionManager::getInstance();
-        $this->auth = new AuthMiddleware();
     }
     
     /**
@@ -35,62 +26,44 @@ class AuthController {
         $email = trim($_POST['email']);
         $password = $_POST['password'];
         $adminKey = isset($_POST['admin_key']) ? trim($_POST['admin_key']) : null;
-        $ipAddress = $_SERVER['REMOTE_ADDR'];
         
-        // Input validation
+        // Basic validation
         if (empty($email) || empty($password)) {
-            $this->auth->logAuthAttempt(false, $email, $ipAddress);
             $this->alertBack("Please enter both email and password.");
-        }
-        
-        // Validate email format
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $this->auth->logAuthAttempt(false, $email, $ipAddress);
-            $this->alertBack("Invalid email format.");
         }
         
         // Check if user exists
         if (!$this->user->findByEmail($email)) {
-            $this->auth->logAuthAttempt(false, $email, $ipAddress);
             $this->alertBack("No account found with this email.");
         }
         
-        // Admin key verification for admin users
+        // Admin key check
         if ($this->user->getRole() === 'admin') {
             if (empty($adminKey)) {
-                $this->auth->logAuthAttempt(false, $email, $ipAddress);
                 $this->alertBack("Admin access requires a secret key.");
             }
             if ($this->user->getAdminKey() !== $adminKey) {
-                $this->auth->logAuthAttempt(false, $email, $ipAddress);
                 $this->alertBack("Invalid admin key. Access denied.");
             }
         }
         
         // Verify password
         if (!$this->user->verifyPassword($password)) {
-            $this->auth->logAuthAttempt(false, $email, $ipAddress);
             $this->alertBack("Incorrect password. Please try again.");
         }
         
-        // SUCCESS - Set session using SessionManager
-        $this->session->setUserSession(
-            $this->user->getId(),
-            $this->user->getName(),
-            $this->user->getEmail(),
-            $this->user->getRole()
-        );
+        // Set session
+        $_SESSION['user_id'] = $this->user->getId();
+        $_SESSION['user_name'] = $this->user->getName();
+        $_SESSION['user_email'] = $this->user->getEmail();
+        $_SESSION['user_role'] = $this->user->getRole();
         
-        // Log successful login
-        $this->auth->logAuthAttempt(true, $email, $ipAddress);
-        
-        // Redirect based on role
         switch ($this->user->getRole()) {
             case 'admin':
                 $this->alertRedirect("Welcome Admin!", "../admin.php");
                 break;
             case 'instructor':
-                $this->alertRedirect("Welcome Instructor!", "/Plagirism_Detection_System/instructordashboard.php");
+                $this->alertRedirect("Welcome Instructor!", "/Plagirism_Detection_System/Views/instructor/Instructor.php");
                 break;
             default:
                 $this->alertRedirect("Welcome Student!", "/Plagirism_Detection_System/Views/student/student_index.php");
@@ -115,18 +88,12 @@ class AuthController {
         $password = $_POST['password'];
         $confirmPassword = $_POST['confirm-password'];
         
-        // Validate name
-        if (strlen($name) < 3) {
-            $this->alertBack("Name must be at least 3 characters long.");
-        }
-        
-        // Validate email format
+        // Validate email provider
+        $allowedProviders = ["gmail.com", "yahoo.com", "outlook.com", "hotmail.com"];
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $this->alertBack("Invalid email format.");
         }
         
-        // Validate email provider
-        $allowedProviders = ["gmail.com", "yahoo.com", "outlook.com", "hotmail.com"];
         $domain = substr(strrchr($email, "@"), 1);
         if (!in_array($domain, $allowedProviders)) {
             $this->alertBack("Email must be Gmail, Yahoo, Outlook, or Hotmail.");
@@ -147,15 +114,9 @@ class AuthController {
             $this->alertBack("Please enter a valid 11-digit mobile number.");
         }
         
-        // Validate role
-        $allowedRoles = ['student', 'instructor'];
-        if (!in_array($role, $allowedRoles)) {
-            $this->alertBack("Invalid role selected.");
-        }
-        
         // Check required fields
-        if (empty($country)) {
-            $this->alertBack("Please select your country.");
+        if (empty($country) || empty($role)) {
+            $this->alertBack("Please select your role and country.");
         }
         
         // Check if email exists
@@ -199,11 +160,6 @@ class AuthController {
             $this->alertBack("Please fill in all fields.");
         }
         
-        // Validate email format
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $this->alertBack("Invalid email format.");
-        }
-        
         // Validate phone
         if (!preg_match("/^\d{11}$/", $mobile)) {
             $this->alertBack("Please enter a valid 11-digit mobile number.");
@@ -234,19 +190,9 @@ class AuthController {
     }
     
     /**
-     * Handle Logout
-     */
-    public function logout() {
-        $this->session->destroy();
-        header("Location: /Plagirism_Detection_System/signup.php");
-        exit();
-    }
-    
-    /**
      * Helper: Alert and go back
      */
     private function alertBack($message) {
-        $message = htmlspecialchars($message, ENT_QUOTES, 'UTF-8');
         echo "<script>alert('$message'); window.history.back();</script>";
         exit();
     }
@@ -255,7 +201,6 @@ class AuthController {
      * Helper: Alert and redirect
      */
     private function alertRedirect($message, $url) {
-        $message = htmlspecialchars($message, ENT_QUOTES, 'UTF-8');
         echo "<script>alert('$message'); window.location.href='$url';</script>";
         exit();
     }

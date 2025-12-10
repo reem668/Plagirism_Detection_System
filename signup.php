@@ -1,45 +1,24 @@
-<?php
-/**
- * Login/Signup Page
- * Redirects to dashboard if already logged in
- */
-
-require_once __DIR__ . '/Helpers/SessionManager.php';
-require_once __DIR__ . '/Middleware/AuthMiddleware.php';
-
-use Helpers\SessionManager;
-use Middleware\AuthMiddleware;
-
-// Initialize
-$session = SessionManager::getInstance();
-$auth = new AuthMiddleware();
-
-// Redirect if already authenticated
-$auth->redirectIfAuthenticated();
-
-// Display auth errors if any
-$authError = $_SESSION['auth_error'] ?? null;
-unset($_SESSION['auth_error']);
-?>
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
   <head>
     <meta charset="UTF-8">
-    <title>Login and Registration - Similyze</title>
+    <title>Login and Registration</title>
     <link rel="stylesheet" href="assets/css/login.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
    <script>
       document.addEventListener("keydown", function(e) {
-      // Detect Ctrl + Shift + X for admin key field
+      // Detect Ctrl + Shift + X
       if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "x") {
         e.preventDefault();
         const adminBox = document.getElementById("admin-key-box");
         
         if (adminBox.style.display === "block") {
+          // Hide & clear the field
           adminBox.style.display = "none";
           document.getElementById("admin_key").value = "";
         } else {
+          // Show the field
           adminBox.style.display = "block";
           document.getElementById("admin_key").focus();
         }
@@ -49,67 +28,16 @@ unset($_SESSION['auth_error']);
     // Handle forgot password link
     function showForgotPassword(e) {
       e.preventDefault();
-      clearAllForms();
       document.getElementById('flip-forgot').checked = true;
     }
 
     function backToLogin(e) {
       e.preventDefault();
-      clearAllForms();
       document.getElementById('flip-forgot').checked = false;
     }
-
-    // Clear all form fields
-    function clearAllForms() {
-      // Clear login form
-      document.getElementById('login-email').value = '';
-      document.getElementById('login-password').value = '';
-      document.getElementById('admin_key').value = '';
-      document.getElementById('admin-key-box').style.display = 'none';
-      
-      // Clear signup form
-      document.getElementById('signup-name').value = '';
-      document.getElementById('signup-email').value = '';
-      document.getElementById('signup-mobile').value = '';
-      document.getElementById('signup-country').value = '';
-      document.getElementById('signup-password').value = '';
-      document.getElementById('confirm-password').value = '';
-      
-      // Uncheck role radio buttons
-      const roleRadios = document.querySelectorAll('input[name="role"]');
-      roleRadios.forEach(radio => radio.checked = false);
-      
-      // Clear forgot password form
-      document.getElementById('forgot-name').value = '';
-      document.getElementById('forgot-email').value = '';
-      document.getElementById('forgot-mobile').value = '';
-      document.getElementById('forgot-password').value = '';
-      document.getElementById('forgot-confirm-password').value = '';
-    }
-
-    // Add event listeners when DOM is loaded
-    document.addEventListener('DOMContentLoaded', function() {
-      // Clear forms when switching from login to signup
-      const flipCheckbox = document.getElementById('flip');
-      flipCheckbox.addEventListener('change', function() {
-        clearAllForms();
-      });
-
-      // Clear forms when switching to/from forgot password
-      const flipForgotCheckbox = document.getElementById('flip-forgot');
-      flipForgotCheckbox.addEventListener('change', function() {
-        clearAllForms();
-      });
-    });
 </script>
   </head>
   <body>
-    <?php if ($authError): ?>
-      <script>
-        alert('<?= htmlspecialchars($authError, ENT_QUOTES) ?>');
-      </script>
-    <?php endif; ?>
-    
     <div class="container">
       <input type="checkbox" id="flip">
       <input type="checkbox" id="flip-forgot">
@@ -153,7 +81,7 @@ unset($_SESSION['auth_error']);
                 </div>
                 <div class="text"><a href="#" onclick="showForgotPassword(event)">Forgot password?</a></div>
                 <div class="button input-box">
-                  <input type="submit" value="Login">
+                  <input type="submit" value="Submit">
                 </div>
                 <div class="text sign-up-text">Don't have an account? <label for="flip">Signup now</label></div>
               </div>
@@ -167,7 +95,7 @@ unset($_SESSION['auth_error']);
               <div class="input-boxes">
                 <div class="input-box">
                   <i class="fas fa-user"></i>
-                  <input type="text" id="signup-name" name="name" placeholder="Enter your name" required minlength="3">
+                  <input type="text" id="signup-name" name="name" placeholder="Enter your name" required>
                 </div>
                 <div class="input-box">
                   <i class="fas fa-envelope"></i>
@@ -191,6 +119,14 @@ unset($_SESSION['auth_error']);
                     <option value="de">Germany</option>
                     <option value="br">Brazil</option>
                     <option value="za">South Africa</option>
+                    <option value="mx">Mexico</option>
+                    <option value="jp">Japan</option>
+                    <option value="kr">South Korea</option>
+                    <option value="cn">China</option>
+                    <option value="ru">Russia</option>
+                    <option value="ae">United Arab Emirates</option>
+                    <option value="it">Italy</option>
+                    <option value="es">Spain</option>
                   </select>
                 </div>
                 <div class="input-box">
@@ -202,14 +138,14 @@ unset($_SESSION['auth_error']);
                 </div>
                 <div class="input-box">
                   <i class="fas fa-lock"></i>
-                  <input type="password" id="signup-password" name="password" placeholder="Enter your password" required pattern="^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*\/])[A-Za-z\d!@#$%^&*\/]{8,}$" title="Must have 8+ chars, uppercase, number, special char">
+                  <input type="password" id="signup-password" name="password" placeholder="Enter your password" required>
                 </div>
                 <div class="input-box">
                   <i class="fas fa-lock"></i>
                   <input type="password" id="confirm-password" name="confirm-password" placeholder="Confirm your password" required>
                 </div>
                 <div class="button input-box">
-                  <input type="submit" value="Signup">
+                  <input type="submit" value="Submit">
                 </div>
                 <div class="text sign-up-text">Already have an account? <label for="flip">Login now</label></div>
               </div>
@@ -231,7 +167,7 @@ unset($_SESSION['auth_error']);
                 </div>
                 <div class="input-box">
                   <i class="fas fa-phone"></i>
-                  <input type="tel" id="forgot-mobile" name="mobile" placeholder="Enter your mobile number" required pattern="\d{11}">
+                  <input type="tel" id="forgot-mobile" name="mobile" placeholder="Enter your mobile number" required pattern="\d{11}" title="Please enter a 11-digit mobile number">
                 </div>
                 <div class="input-box">
                   <i class="fas fa-lock"></i>
@@ -260,7 +196,6 @@ if (isset($_GET['signup']) && $_GET['signup'] === 'success') {
       alert('Signup successful! You can now log in.');
       window.onload = function() {
         document.getElementById('flip').checked = false;
-        clearAllForms();
       };
     </script>
     ";
@@ -273,17 +208,7 @@ if (isset($_GET['reset']) && $_GET['reset'] === 'success') {
       window.onload = function() {
         document.getElementById('flip').checked = false;
         document.getElementById('flip-forgot').checked = false;
-        clearAllForms();
       };
-    </script>
-    ";
-}
-
-if (isset($_GET['logout']) && $_GET['logout'] === 'success') {
-    echo "
-    <script>
-      alert('You have been logged out successfully.');
-      clearAllForms();
     </script>
     ";
 }

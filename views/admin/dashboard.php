@@ -1,32 +1,3 @@
-<?php
-/**
- * Protected Admin Dashboard View
- * This file should only be accessed through admin.php which handles authentication
- * Additional security check included
- */
-
-// Security check - ensure this file is accessed through admin.php
-if (!defined('ADMIN_ACCESS')) {
-    die('Direct access not permitted. Please access through admin.php');
-}
-
-// Additional authentication verification
-require_once __DIR__ . '/../../Helpers/SessionManager.php';
-require_once __DIR__ . '/../../Middleware/AuthMiddleware.php';
-
-use Helpers\SessionManager;
-use Middleware\AuthMiddleware;
-
-$session = SessionManager::getInstance();
-$auth = new AuthMiddleware();
-
-// Double-check authentication
-if (!$session->isLoggedIn() || $session->getUserRole() !== 'admin') {
-    header("Location: /Plagirism_Detection_System/signup.php");
-    exit();
-}
-?>
-
 <section class="dashboard">
   <h2>Dashboard Overview 📊</h2>
 
@@ -97,6 +68,7 @@ if (!$session->isLoggedIn() || $session->getUserRole() !== 'admin') {
   </div>
 </section>
 
-<!-- Load Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="/Plagirism_Detection_System/assets/js/admin_dashboard.js"></script>
+
+
+
+
