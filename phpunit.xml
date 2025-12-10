@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<phpunit bootstrap="vendor/autoload.php"
+<phpunit bootstrap="tests/bootstrap.php"
          colors="true"
          stopOnFailure="false">
 
@@ -10,9 +10,12 @@
     </testsuites>
 
     <php>
-        <ini name="error_reporting" value="-1" />
-        <ini name="display_errors" value="1" />
+        <ini name="error_reporting" value="-1"/>
+        <ini name="display_errors" value="1"/>
+        <env name="DB_HOST" value="localhost"/>
+        <env name="DB_NAME" value="tests"/>
+        <env name="DB_USER" value="root"/>
+        <env name="DB_PASS" value=""/>
     </php>
 
 </phpunit>
-
