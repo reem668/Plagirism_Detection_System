@@ -34,7 +34,11 @@ function loadUsers() {
         search: currentSearch
     });
     
-    fetch(`/Plagirism_Detection_System/ajax/get_users.php?${params}`)
+    fetch(`/Plagirism_Detection_System/ajax/get_users.php?${params}`, {
+        headers: {
+            'Cache-Control': 'no-cache'
+        }
+    })
         .then(response => response.json())
         .then(data => {
             spinner.style.display = 'none';
@@ -298,7 +302,11 @@ function openEditUserModal(userId) {
     if (!card) return;
     
     // Get user data by making AJAX call
-    fetch(`/Plagirism_Detection_System/ajax/get_users.php?page=1&role=all`)
+    fetch(`/Plagirism_Detection_System/ajax/get_users.php?page=1&role=all`, {
+        headers: {
+            'Cache-Control': 'no-cache'
+        }
+    })
         .then(response => response.json())
         .then(data => {
             if (data.success) {

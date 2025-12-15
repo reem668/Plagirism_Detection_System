@@ -77,6 +77,11 @@ if ($role === 'admin' && !empty($adminKey)) {
     }
 }
 
+// Require admin key when assigning admin role to a non-admin user
+if ($role === 'admin' && $oldData['role'] !== 'admin' && empty($adminKey)) {
+    $errors[] = 'Admin secret key is required when assigning admin role';
+}
+
 if (!empty($errors)) {
     echo json_encode(['success' => false, 'message' => implode(', ', $errors)]);
     exit;
@@ -150,5 +155,6 @@ if ($stmt->execute()) {
     ]);
 } else {
     $stmt->close();
+    error_log("Edit user failed: " . $stmt->error);
     echo json_encode(['success' => false, 'message' => 'Failed to update user']);
 }

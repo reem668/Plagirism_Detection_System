@@ -6,3 +6,9 @@
 [2025-12-15 11:37:46] Admin gamal updated user ID 7: gamal -> gamal, role: admin, status: active
 [2025-12-15 11:38:14] Admin gamal updated user ID 4: diaa -> diaa, role: student, status: active
 [2025-12-15 11:38:34] Admin gamal updated user ID 1: Admin -> Admin, role: admin, status: active
+[2025-12-15 12:02:06] Admin Admin updated user ID 2: shadw -> shadw, role: instructor, status: active
+[2025-12-15 12:03:00] Admin Admin updated user ID 4: diaa -> diaa, role: admin, status: active (admin key updated)
+[2025-12-15 12:15:12] Admin Admin updated user ID 2: shadw -> shadw, role: student, status: active
+[2025-12-15 12:15:25] Admin Admin updated user ID 2: shadw -> shadw, role: instructor, status: active
+[2025-12-15 12:20:46] Admin Admin updated user ID 4: diaa -> diaa, role: student, status: active
+[2025-12-15 12:21:29] Admin Admin updated user ID 4: diaa -> diaa, role: student, status: active
