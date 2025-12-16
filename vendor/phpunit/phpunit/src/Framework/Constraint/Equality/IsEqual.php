@@ -11,10 +11,9 @@ namespace PHPUnit\Framework\Constraint;
 
 use function is_string;
 use function sprintf;
-use function str_contains;
+use function strpos;
 use function trim;
 use PHPUnit\Framework\ExpectationFailedException;
-use PHPUnit\Util\Exporter;
 use SebastianBergmann\Comparator\ComparisonFailure;
 use SebastianBergmann\Comparator\Factory as ComparatorFactory;
 
@@ -23,11 +22,32 @@ use SebastianBergmann\Comparator\Factory as ComparatorFactory;
  */
 final class IsEqual extends Constraint
 {
-    private readonly mixed $value;
+    /**
+     * @var mixed
+     */
+    private $value;
 
-    public function __construct(mixed $value)
+    /**
+     * @var float
+     */
+    private $delta;
+
+    /**
+     * @var bool
+     */
+    private $canonicalize;
+
+    /**
+     * @var bool
+     */
+    private $ignoreCase;
+
+    public function __construct($value, float $delta = 0.0, bool $canonicalize = false, bool $ignoreCase = false)
     {
-        $this->value = $value;
+        $this->value        = $value;
+        $this->delta        = $delta;
+        $this->canonicalize = $canonicalize;
+        $this->ignoreCase   = $ignoreCase;
     }
 
     /**
@@ -41,8 +61,10 @@ final class IsEqual extends Constraint
      * failure.
      *
      * @throws ExpectationFailedException
+     *
+     * @return bool
      */
-    public function evaluate(mixed $other, string $description = '', bool $returnResult = false): bool
+    public function evaluate($other, string $description = '', bool $returnResult = false): ?bool
     {
         // If $this->value and $other are identical, they are also equal.
         // This is the most common path and will allow us to skip
@@ -56,12 +78,15 @@ final class IsEqual extends Constraint
         try {
             $comparator = $comparatorFactory->getComparatorFor(
                 $this->value,
-                $other,
+                $other
             );
 
             $comparator->assertEquals(
                 $this->value,
                 $other,
+                $this->delta,
+                $this->canonicalize,
+                $this->ignoreCase
             );
         } catch (ComparisonFailure $f) {
             if ($returnResult) {
@@ -70,7 +95,7 @@ final class IsEqual extends Constraint
 
             throw new ExpectationFailedException(
                 trim($description . "\n" . $f->getMessage()),
-                $f,
+                $f
             );
         }
 
@@ -79,26 +104,35 @@ final class IsEqual extends Constraint
 
     /**
      * Returns a string representation of the constraint.
+     *
+     * @throws \SebastianBergmann\RecursionContext\InvalidArgumentException
      */
     public function toString(): string
     {
         $delta = '';
 
         if (is_string($this->value)) {
-            if (str_contains($this->value, "\n")) {
+            if (strpos($this->value, "\n") !== false) {
                 return 'is equal to <text>';
             }
 
             return sprintf(
                 "is equal to '%s'",
-                $this->value,
+                $this->value
+            );
+        }
+
+        if ($this->delta != 0) {
+            $delta = sprintf(
+                ' with delta <%F>',
+                $this->delta
             );
         }
 
         return sprintf(
             'is equal to %s%s',
-            Exporter::export($this->value),
-            $delta,
+            $this->exporter()->export($this->value),
+            $delta
         );
     }
 }

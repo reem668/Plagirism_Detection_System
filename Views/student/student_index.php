@@ -184,18 +184,18 @@ if (isset($_POST['delete_id'])) {
     if (verifyOwnership($submissionId, $userId, $activeSubmissions)) {
         $result = $ctrl->delete($submissionId, $userId);
         
-        if ($result) {
-            redirectWithMessage(
-                'student_index.php?view=history',
-                "Submission #$submissionId moved to trash successfully",
-                'success'
-            );
-        } else {
-            redirectWithMessage(
-                'student_index.php?view=history',
-                "Failed to delete submission #$submissionId",
-                'error'
-            );
+        if ($result === true) {
+    redirectWithMessage(
+        'student_index.php?view=trash',
+        "Submission #$submissionId moved to trash successfully",
+        'success'
+    );
+} else {
+    redirectWithMessage(
+        'student_index.php?view=history',
+        "Failed to delete submission #$submissionId",
+        'error'
+    );
         }
     } else {
         redirectWithMessage(

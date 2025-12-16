@@ -18,13 +18,21 @@ class SubmissionController {
     protected $submission;
     protected $rootPath;
 
-    public function __construct(){
-        $this->rootPath = dirname(__DIR__);
+  public function __construct(
+    ?\Models\Submission $submission = null,
+    ?\mysqli $conn = null
+){
+    $this->rootPath = dirname(__DIR__);
+
+    if ($conn === null) {
         require $this->rootPath . '/includes/db.php';
         $this->conn = $conn;
-        if($this->conn->connect_error) die("DB connection failed: ".$this->conn->connect_error);
-        $this->submission = new Submission($this->conn);
+    } else {
+        $this->conn = $conn;
     }
+
+    $this->submission = $submission ?? new \Models\Submission($this->conn);
+}
 
     /**
      * Handle submission
@@ -153,14 +161,15 @@ class SubmissionController {
             return "unauthorized"; // not your submission
         }
 
-        // Soft delete: move to trash
-        $stmt = $this->conn->prepare("UPDATE submissions SET status='trash' WHERE id=? AND user_id=?");
-        $stmt->bind_param("ii", $submissionId, $studentId);
-        $stmt->execute();
-        $success = $stmt->affected_rows > 0;
-        $stmt->close();
+         $stmt = $this->conn->prepare(
+        "UPDATE submissions SET status='deleted' WHERE id=? AND user_id=?"
+    );
+    $stmt->bind_param("ii", $submissionId, $studentId);
+    $stmt->execute();
+    $affected = $stmt->affected_rows;
+    $stmt->close();
 
-        return $success ? "success" : "failed";
+    return $affected > 0;
     }
 
     public function restore(int $id, int $userId){
@@ -181,7 +190,7 @@ class SubmissionController {
     public function getUserSubmissions(int $userId, string $filter = 'active'): array {
         if ($filter === 'deleted') {
             // Get only trashed submissions
-            return $this->submission->getByUser($userId, 'trash');
+            return $this->submission->getByUser($userId, 'deleted');
         }
         
         // Get ALL non-trashed submissions (pending, accepted, rejected, active)
@@ -190,7 +199,7 @@ class SubmissionController {
             SELECT s.*, u.name as teacher
             FROM submissions s
             LEFT JOIN users u ON s.course_id = u.id AND u.role = 'instructor'
-            WHERE s.user_id = ? AND s.status != 'trash'
+            WHERE s.user_id = ? AND s.status != 'deleted'
             ORDER BY s.created_at DESC
         ");
         $stmt->bind_param("i", $userId);
@@ -240,36 +249,16 @@ class SubmissionController {
     /**
      * Plagiarism check (5-word chunks)
      */
-    protected function checkPlagiarism(string $text): array {
-        $existing = $this->submission->getAllSubmissions();
-        $words = preg_split('/\s+/', strtolower($text));
-        $totalChunks = max(1, count($words) - 4);
-        $matchCount = 0;
-        $matchingWords = [];
+protected function checkPlagiarism(string $text): array
+{
+    require_once $this->rootPath . '/Services/PlagiarismService.php';
 
-        for ($i = 0; $i < $totalChunks; $i++) {
-            $chunk = implode(' ', array_slice($words, $i, 5));
-            foreach ($existing as $sub) {
-                $subText = strtolower($sub['text_content']);
-                if (strpos($subText, $chunk) !== false) {
-                    $matchCount++;
-                    $matchingWords = array_merge($matchingWords, array_slice($words, $i, 5));
-                    break;
-                }
-            }
-        }
+    $service = new \PlagiarismService();
+    $existing = $this->submission->getAllSubmissions();
 
-        $plagPercent = ($matchCount / $totalChunks) * 100;
-        $exact = intval($plagPercent * 0.3);
-        $partial = intval($plagPercent - $exact);
+    return $service->check($text, $existing);
+}
 
-        return [
-            'plagiarised' => round($plagPercent,2),
-            'exact' => $exact,
-            'partial' => $partial,
-            'matchingWords' => array_unique($matchingWords)
-        ];
-    }
 
     /**
      * Generate HTML report with highlighted words
