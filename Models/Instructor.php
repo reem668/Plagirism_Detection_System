@@ -207,21 +207,14 @@ $stmt->close();
         'rejected_submissions' => $rejectedData['rejected_submissions'] ?? 0
     ];
 }
-  public function getEnrolledStudents($instructor_id)
-{
-    $stmt = $this->conn->prepare("
-        SELECT users.* 
-        FROM enrollments 
-        JOIN users ON users.id = enrollments.student_id
-        WHERE enrollments.instructor_id = ?
-    ");
-
-    $stmt->bind_param("i", $instructor_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    return $result->fetch_all(MYSQLI_ASSOC);
-}
-
+    public function getEnrolledStudents() {
+        $students = [];
+        $result = $this->conn->query("SELECT * FROM users WHERE role='student'");
+        while ($row = $result->fetch_assoc()) {
+            $students[] = $row;
+        }
+        return $students;
+    }
 
     /**
      * Get all instructors from database

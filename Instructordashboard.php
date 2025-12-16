@@ -50,7 +50,7 @@ if (!$instructor) {
 }
 
 // Fetch dashboard data
-$stats = $controller->getStats();
+$stats = $controller->getStats($instructor_id);
 $enrolled_students = $controller->getEnrolledStudents($instructor_id);
 $stats = [
     'students_enrolled' => count($enrolled_students)

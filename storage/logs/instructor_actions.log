@@ -57,3 +57,5 @@
 [2025-12-14 11:10:53] SUCCESS - Instructor ID: 11, Action: accept, Submission ID: 43, IP: ::1
 [2025-12-14 11:27:24] SUCCESS - Instructor ID: 11, Action: add_feedback, Submission ID: 66, IP: ::1
 [2025-12-14 11:27:24] SUCCESS - Instructor ID: 11, Action: add_feedback, Submission ID: 66, IP: ::1
+[2025-12-17 00:25:21] SUCCESS - Instructor ID: 3, Action: restore, Submission ID: 8, IP: ::1
+[2025-12-17 00:25:21] SUCCESS - Instructor ID: 3, Action: restore, Submission ID: 8, IP: ::1
