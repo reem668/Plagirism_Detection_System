@@ -18,16 +18,21 @@ class UserController {
     protected $conn;
     protected $session;
 
-    public function __construct() {
+    public function __construct($testConnection = null) {
         $this->session = SessionManager::getInstance();
         
-        // Initialize database connection
-        $rootPath = dirname(__DIR__);
-        require $rootPath . '/includes/db.php';
-        $this->conn = $conn;
-        
-        if ($this->conn->connect_error) {
-            die("DB connection failed: " . $this->conn->connect_error);
+        if ($testConnection !== null) {
+            // Use provided test connection
+            $this->conn = $testConnection;
+        } else {
+            // Initialize database connection for production
+            $rootPath = dirname(__DIR__);
+            require $rootPath . '/includes/db.php';
+            $this->conn = $conn;
+            
+            if ($this->conn->connect_error) {
+                die("DB connection failed: " . $this->conn->connect_error);
+            }
         }
     }
 
@@ -37,12 +42,20 @@ class UserController {
     protected function requireAdmin() {
         if (!$this->session->isLoggedIn()) {
             http_response_code(401);
-            die(json_encode(['success' => false, 'message' => 'Authentication required']));
+            echo json_encode(['success' => false, 'message' => 'Authentication required']);
+            if (!defined('PHPUNIT_RUNNING')) {
+                exit;
+            }
+            throw new \Exception('Authentication required');
         }
         
         if ($this->session->getUserRole() !== 'admin') {
             http_response_code(403);
-            die(json_encode(['success' => false, 'message' => 'Unauthorized access - Admin role required']));
+            echo json_encode(['success' => false, 'message' => 'Unauthorized access - Admin role required']);
+            if (!defined('PHPUNIT_RUNNING')) {
+                exit;
+            }
+            throw new \Exception('Unauthorized access');
         }
     }
 

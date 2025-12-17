@@ -1,7 +1,7 @@
 <?php
 /**
  * User Model - Handles all user database operations
- * Updated with status field support
+ * Updated with status field support and test support
  */
 class User {
     private $db;
@@ -14,21 +14,28 @@ class User {
     private $role;
     private $status;
     private $admin_key;
+    private $isTestConnection = false;
     
-    public function __construct() {
-        // Connect to database directly
-        $host = "localhost";
-        $user = "root";
-        $pass = "";
-        $dbname = "pal";
-        
-        $this->db = new mysqli($host, $user, $pass, $dbname);
-        
-        if ($this->db->connect_error) {
-            die("Connection failed: " . $this->db->connect_error);
+    public function __construct($testConnection = null) {
+        if ($testConnection !== null) {
+            // Use provided test connection
+            $this->db = $testConnection;
+            $this->isTestConnection = true;
+        } else {
+            // Connect to database directly for production
+            $host = "localhost";
+            $user = "root";
+            $pass = "";
+            $dbname = "pal";
+            
+            $this->db = new mysqli($host, $user, $pass, $dbname);
+            
+            if ($this->db->connect_error) {
+                die("Connection failed: " . $this->db->connect_error);
+            }
+            
+            $this->db->set_charset("utf8");
         }
-        
-        $this->db->set_charset("utf8");
     }
     
     // ========== GETTERS ==========
@@ -77,7 +84,8 @@ class User {
     public function findByEmail($email) {
         $stmt = $this->db->prepare("SELECT * FROM users WHERE email = ?");
         if (!$stmt) {
-            die("Prepare failed: " . $this->db->error);
+            error_log("Prepare failed: " . $this->db->error);
+            return false;
         }
         
         $stmt->bind_param("s", $email);
@@ -91,7 +99,7 @@ class User {
             $this->email = $row['email'];
             $this->password = $row['password'];
             $this->role = $row['role'];
-            $this->status = $row['status'] ?? 'active'; // Default to active if not set
+            $this->status = $row['status'] ?? 'active';
             $this->admin_key = $row['admin_key'] ?? null;
             $stmt->close();
             return true;
@@ -106,7 +114,8 @@ class User {
     public function emailExists($email) {
         $stmt = $this->db->prepare("SELECT id FROM users WHERE email = ?");
         if (!$stmt) {
-            die("Prepare failed: " . $this->db->error);
+            error_log("Prepare failed: " . $this->db->error);
+            return false;
         }
         
         $stmt->bind_param("s", $email);
@@ -137,7 +146,8 @@ class User {
     public function verifyUserInfo($name, $email, $mobile) {
         $stmt = $this->db->prepare("SELECT * FROM users WHERE name = ? AND email = ? AND mobile = ?");
         if (!$stmt) {
-            die("Prepare failed: " . $this->db->error);
+            error_log("Prepare failed: " . $this->db->error);
+            return false;
         }
         
         $stmt->bind_param("sss", $name, $email, $mobile);
@@ -168,7 +178,8 @@ class User {
         
         $stmt = $this->db->prepare("UPDATE users SET password = ? WHERE email = ?");
         if (!$stmt) {
-            die("Prepare failed: " . $this->db->error);
+            error_log("Prepare failed: " . $this->db->error);
+            return false;
         }
         
         $stmt->bind_param("ss", $hashedPassword, $email);
@@ -183,7 +194,8 @@ class User {
     public function updateStatus($userId, $status) {
         $stmt = $this->db->prepare("UPDATE users SET status = ? WHERE id = ?");
         if (!$stmt) {
-            die("Prepare failed: " . $this->db->error);
+            error_log("Prepare failed: " . $this->db->error);
+            return false;
         }
         
         $stmt->bind_param("si", $status, $userId);
@@ -203,7 +215,8 @@ class User {
             "INSERT INTO users (name, email, mobile, country, password, role, status) VALUES (?, ?, ?, ?, ?, ?, ?)"
         );
         if (!$stmt) {
-            die("Prepare failed: " . $this->db->error);
+            error_log("Prepare failed: " . $this->db->error);
+            return false;
         }
         
         $stmt->bind_param("sssssss", 
@@ -219,18 +232,20 @@ class User {
         $success = $stmt->execute();
         if ($success) {
             $this->id = $stmt->insert_id;
+        } else {
+            error_log("Execute failed: " . $stmt->error);
         }
         $stmt->close();
         return $success;
     }
     
     /**
-     * Close connection when done
+     * Close connection when done (only if not using test connection)
      */
     public function __destruct() {
-        if ($this->db) {
+        // Don't close test connections
+        if ($this->db && !$this->isTestConnection && !defined('PHPUNIT_RUNNING')) {
             $this->db->close();
         }
     }
 }
-?>

@@ -34,21 +34,35 @@ abstract class DatabaseTestCase extends TestCase
         if (self::$conn) {
             self::$conn->close();
         }
-
-        // Keep the test database so the user can inspect it after runs.
-        // If you ever want cleanup, add an env flag and conditionally drop.
     }
 
-    protected function setUp(): void
+   protected function setUp(): void
     {
+        // Start session BEFORE transaction
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+        
+        // Start transaction for test isolation
         self::$conn->begin_transaction();
     }
-
+    
     protected function tearDown(): void
     {
+        // Rollback transaction to clean up test data
         if (self::$conn && self::$conn->errno === 0) {
             self::$conn->rollback();
         }
+        
+        // Clear session data
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            $_SESSION = [];
+        }
+        
+        // Clear superglobals
+        $_POST = [];
+        $_GET = [];
+        $_SERVER = [];
     }
 
     protected static function migrateSchema(): void
