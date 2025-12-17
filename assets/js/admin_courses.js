@@ -90,7 +90,6 @@ function loadInstructors() {
 function populateInstructorDropdowns() {
     const addDropdown = document.getElementById('newInstructorId');
     const editDropdown = document.getElementById('editInstructorId');
-    const assignDropdown = document.getElementById('assignInstructorSelect');
     const loadingHint = document.getElementById('instructorLoadingHint');
     
     if (loadingHint) {
@@ -101,7 +100,6 @@ function populateInstructorDropdowns() {
         const options = '<option value="">No instructors available</option>';
         if (addDropdown) addDropdown.innerHTML = options;
         if (editDropdown) editDropdown.innerHTML = options;
-        if (assignDropdown) assignDropdown.innerHTML = options;
         return;
     }
     
@@ -114,9 +112,6 @@ function populateInstructorDropdowns() {
     }
     if (editDropdown) {
         editDropdown.innerHTML = '<option value="">Select Instructor</option>' + options;
-    }
-    if (assignDropdown) {
-        assignDropdown.innerHTML = '<option value="">Select Instructor</option>' + options;
     }
 }
 
@@ -382,68 +377,6 @@ function deleteCourse(courseId) {
     });
 }
 
-/**
- * Open assign instructor panel
- */
-function openAssignInstructorPanel() {
-    if (!currentCourseId) {
-        showCourseNotification('No course selected', 'error');
-        return;
-    }
-    
-    document.getElementById('assignInstructorCourseId').value = currentCourseId;
-    document.getElementById('assignInstructorSelect').value = '';
-    
-    openPanel('assignInstructorPanel');
-}
-
-/**
- * Close assign instructor panel
- */
-function closeAssignInstructorPanel() {
-    closePanel('assignInstructorPanel');
-}
-
-/**
- * Assign selected instructor
- */
-function assignSelectedInstructor() {
-    const courseId = document.getElementById('assignInstructorCourseId').value;
-    const instructorId = document.getElementById('assignInstructorSelect').value;
-    const csrf = document.getElementById('assignInstructorCsrf').value;
-    
-    if (!courseId || !instructorId) {
-        showCourseNotification('⚠️ Please select an instructor!', 'error');
-        return;
-    }
-    
-    const formData = new FormData();
-    formData.append('_csrf', csrf);
-    formData.append('course_id', courseId);
-    formData.append('instructor_id', instructorId);
-    
-    fetch(`${BASE_URL}/ajax/assign_instructor.php`, {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            loadCourses();
-            closeAssignInstructorPanel();
-            if (currentCourseId) {
-                viewCourseDetails(currentCourseId);
-            }
-            showCourseNotification('✅ Instructor assigned successfully!', 'success');
-        } else {
-            showCourseNotification('⚠️ ' + data.message, 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showCourseNotification('Failed to assign instructor', 'error');
-    });
-}
 
 /**
  * Show notification
@@ -500,8 +433,8 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// Make functions globally available for inline handlers (backup)
-// This ensures functions are available even if script loads after HTML
+// Make functions globally available for inline onclick handlers
+// These are attached immediately so they're available when the HTML renders
 window.toggleAddCourseForm = toggleAddCourseForm;
 window.addCourse = addCourse;
 window.viewCourseDetails = viewCourseDetails;
@@ -510,7 +443,4 @@ window.openEditCoursePanel = openEditCoursePanel;
 window.closeEditCoursePanel = closeEditCoursePanel;
 window.saveCourseEdit = saveCourseEdit;
 window.deleteCourse = deleteCourse;
-window.openAssignInstructorPanel = openAssignInstructorPanel;
-window.closeAssignInstructorPanel = closeAssignInstructorPanel;
-window.assignSelectedInstructor = assignSelectedInstructor;
 window.closeAllPanels = closeAllPanels;

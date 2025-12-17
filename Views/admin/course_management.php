@@ -125,10 +125,8 @@ if (!$session->isLoggedIn() || $session->getUserRole() !== 'admin') {
       </div>
       
       <div class="instructors-section">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-          <h4>👨‍🏫 Change Instructor</h4>
-          <button class="btn small primary" onclick="openAssignInstructorPanel()">Change Instructor</button>
-        </div>
+        <h4>👨‍🏫 Instructor Information</h4>
+        <p style="color: #a7b7d6; font-size: 13px;">Each course is assigned to one instructor. To change the instructor, edit the course.</p>
       </div>
     </div>
   </div>
@@ -173,30 +171,6 @@ if (!$session->isLoggedIn() || $session->getUserRole() !== 'admin') {
   </div>
 </div>
 
-<!-- Side Panel for Assign Instructor -->
-<div id="assignInstructorPanel" class="side-panel">
-  <div class="side-panel-content">
-    <div class="side-panel-header">
-      <h3><i class="fas fa-user-plus"></i> Assign Instructor</h3>
-      <button class="close-panel-btn" onclick="closeAssignInstructorPanel()">&times;</button>
-    </div>
-    <div class="side-panel-body">
-      <input type="hidden" id="assignInstructorCsrf" value="<?= \Helpers\Csrf::token() ?>">
-      <input type="hidden" id="assignInstructorCourseId">
-      <div class="form-group">
-        <label>Select Instructor *</label>
-        <select id="assignInstructorSelect" class="form-input" required>
-          <option value="">Select Instructor</option>
-          <!-- Instructors will be loaded dynamically -->
-        </select>
-      </div>
-      <div class="form-actions">
-        <button class="btn primary" onclick="assignSelectedInstructor()">Assign Instructor</button>
-        <button class="btn" onclick="closeAssignInstructorPanel()">Cancel</button>
-      </div>
-    </div>
-  </div>
-</div>
 
 <!-- Panel Overlay -->
 <div id="panelOverlay" class="panel-overlay" onclick="closeAllPanels()"></div>
