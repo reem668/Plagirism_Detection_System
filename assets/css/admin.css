@@ -354,28 +354,97 @@ body{
 .settings-form input[type="number"], .settings-form input[type="color"]{ padding:10px; border-radius:10px; border:none; background: rgba(255,255,255,0.03); color:#fff; }
 
 .add-user-form {
-  background: #1e1f29;
-  padding: 15px;
-  border-radius: 10px;
-  margin-bottom: 20px;
+  background: linear-gradient(145deg, rgba(30,31,41,0.95), rgba(20,21,31,0.95));
+  padding: 25px;
+  border-radius: 14px;
+  margin-bottom: 25px;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .add-user-form h3 {
-  color: #fff;
-  margin-bottom: 10px;
+  color: var(--accent1);
+  margin-bottom: 20px;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.add-user-form h3 i {
+  font-size: 18px;
+}
+
+.add-user-form .form-group {
+  margin-bottom: 20px;
+}
+
+.add-user-form .form-group label {
+  display: block;
+  color: #a7b7d6;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .add-user-form input,
-.add-user-form select {
-  padding: 8px;
-  margin-right: 8px;
-  border-radius: 5px;
-  border: none;
+.add-user-form select,
+.add-user-form textarea {
+  width: 100%;
+  padding: 12px 15px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.05);
+  color: #fff;
+  font-size: 14px;
+  font-family: inherit;
+  transition: all 0.3s;
+  margin-bottom: 0;
+}
+
+.add-user-form input:focus,
+.add-user-form select:focus,
+.add-user-form textarea:focus {
   outline: none;
+  background: rgba(255,255,255,0.08);
+  border-color: var(--accent1);
+  box-shadow: 0 0 0 3px rgba(0,198,255,0.1);
+}
+
+.add-user-form textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.add-user-form .form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 25px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255,255,255,0.05);
 }
 
 .add-user-form .btn {
-  padding: 8px 15px;
+  padding: 12px 20px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
 }
 
 .notice {

@@ -28,24 +28,48 @@ if (!$session->isLoggedIn() || $session->getUserRole() !== 'admin') {
 ?>
 
 <section class="course-management">
-  <h2>Course Management 📚</h2>
+  <div class="page-header">
+    <h2>📚 Course Management</h2>
+    <button class="btn primary" id="toggleAddCourseBtn">
+      <i class="fas fa-plus"></i> Create New Course
+    </button>
+  </div>
   
   <div id="courseNotification" class="notice" style="display:none;"></div>
   
   <!-- Add New Course Form -->
-  <div class="add-user-form">
-    <h3>Create New Course ➕</h3>
+  <div class="add-user-form" id="addCourseFormContainer" style="display:none;">
+    <h3><i class="fas fa-book"></i> Create New Course</h3>
     <form id="addCourseForm" class="add-form" onsubmit="addCourse(event)">
-      <input type="text" id="newCourseCode" placeholder="Course Code (e.g., CS101)" required>
-      <input type="text" id="newCourseName" placeholder="Course Name" required>
-      <input type="text" id="newDepartment" placeholder="Department" required>
-      <select id="newTerm" required>
-        <option value="">Select Term</option>
-        <option value="Fall 2024">Fall 2024</option>
-        <option value="Spring 2025">Spring 2025</option>
-        <option value="Summer 2025">Summer 2025</option>
-      </select>
-      <button type="submit" class="btn primary">Create Course</button>
+      <input type="hidden" id="addCourseCsrf" name="_csrf" value="<?= \Helpers\Csrf::token() ?>">
+      
+      <div class="form-group">
+        <label for="newCourseName">Course Name *</label>
+        <input type="text" id="newCourseName" name="name" class="form-input" placeholder="Enter course name" required minlength="3">
+      </div>
+      
+      <div class="form-group">
+        <label for="newCourseDescription">Description</label>
+        <textarea id="newCourseDescription" name="description" class="form-input" placeholder="Enter course description (optional)" rows="3"></textarea>
+      </div>
+      
+      <div class="form-group">
+        <label for="newInstructorId">Instructor *</label>
+        <select id="newInstructorId" name="instructor_id" class="form-input" required>
+          <option value="">Select Instructor</option>
+          <!-- Instructors will be loaded dynamically -->
+        </select>
+        <small class="form-hint" id="instructorLoadingHint" style="display:none;">Loading instructors...</small>
+      </div>
+      
+      <div class="form-actions">
+        <button type="submit" class="btn primary">
+          <i class="fas fa-save"></i> Create Course
+        </button>
+        <button type="button" class="btn" id="cancelAddCourseBtn">
+          Cancel
+        </button>
+      </div>
     </form>
   </div>
   
@@ -55,11 +79,10 @@ if (!$session->isLoggedIn() || $session->getUserRole() !== 'admin') {
     <table class="courses-table">
       <thead>
         <tr>
-          <th>Course Code</th>
           <th>Course Name</th>
-          <th>Department</th>
-          <th>Term</th>
-          <th>Instructors</th>
+          <th>Description</th>
+          <th>Instructor</th>
+          <th>Created</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -82,30 +105,30 @@ if (!$session->isLoggedIn() || $session->getUserRole() !== 'admin') {
         <h4>Course Information</h4>
         <div class="info-grid">
           <div class="info-item">
-            <label>Code:</label>
-            <span id="panelCourseCode"></span>
-          </div>
-          <div class="info-item">
             <label>Name:</label>
             <span id="panelCourseName"></span>
           </div>
           <div class="info-item">
-            <label>Department:</label>
-            <span id="panelDepartment"></span>
+            <label>Description:</label>
+            <span id="panelCourseDescription"></span>
           </div>
           <div class="info-item">
-            <label>Term:</label>
-            <span id="panelTerm"></span>
+            <label>Instructor:</label>
+            <span id="panelInstructorName"></span>
+            <small id="panelInstructorEmail"></small>
+          </div>
+          <div class="info-item">
+            <label>Created:</label>
+            <span id="panelCreatedAt"></span>
           </div>
         </div>
       </div>
       
       <div class="instructors-section">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-          <h4>👨‍🏫 Assigned Instructors</h4>
-          <button class="btn small primary" onclick="openAssignInstructorPanel()">+ Assign</button>
+          <h4>👨‍🏫 Change Instructor</h4>
+          <button class="btn small primary" onclick="openAssignInstructorPanel()">Change Instructor</button>
         </div>
-        <div class="instructors-list" id="panelInstructorsList"></div>
       </div>
     </div>
   </div>
@@ -120,29 +143,24 @@ if (!$session->isLoggedIn() || $session->getUserRole() !== 'admin') {
     </div>
     <div class="side-panel-body">
       <form id="editCourseForm" onsubmit="saveCourseEdit(event)">
-        <input type="hidden" id="editCourseId">
+        <input type="hidden" id="editCourseId" name="course_id">
+        <input type="hidden" id="editCourseCsrf" name="_csrf" value="<?= \Helpers\Csrf::token() ?>">
         
         <div class="form-group">
-          <label>Course Code</label>
-          <input type="text" id="editCourseCode" class="form-input" required>
+          <label>Course Name *</label>
+          <input type="text" id="editCourseName" name="name" class="form-input" required>
         </div>
         
         <div class="form-group">
-          <label>Course Name</label>
-          <input type="text" id="editCourseName" class="form-input" required>
+          <label>Description</label>
+          <textarea id="editCourseDescription" name="description" class="form-input" rows="3"></textarea>
         </div>
         
         <div class="form-group">
-          <label>Department</label>
-          <input type="text" id="editDepartment" class="form-input" required>
-        </div>
-        
-        <div class="form-group">
-          <label>Term</label>
-          <select id="editTerm" class="form-input" required>
-            <option value="Fall 2024">Fall 2024</option>
-            <option value="Spring 2025">Spring 2025</option>
-            <option value="Summer 2025">Summer 2025</option>
+          <label>Instructor *</label>
+          <select id="editInstructorId" name="instructor_id" class="form-input" required>
+            <option value="">Select Instructor</option>
+            <!-- Instructors will be loaded dynamically -->
           </select>
         </div>
         
@@ -163,9 +181,17 @@ if (!$session->isLoggedIn() || $session->getUserRole() !== 'admin') {
       <button class="close-panel-btn" onclick="closeAssignInstructorPanel()">&times;</button>
     </div>
     <div class="side-panel-body">
-      <div class="instructor-select-list" id="instructorSelectList"></div>
+      <input type="hidden" id="assignInstructorCsrf" value="<?= \Helpers\Csrf::token() ?>">
+      <input type="hidden" id="assignInstructorCourseId">
+      <div class="form-group">
+        <label>Select Instructor *</label>
+        <select id="assignInstructorSelect" class="form-input" required>
+          <option value="">Select Instructor</option>
+          <!-- Instructors will be loaded dynamically -->
+        </select>
+      </div>
       <div class="form-actions">
-        <button class="btn primary" onclick="assignSelectedInstructors()">Assign Selected</button>
+        <button class="btn primary" onclick="assignSelectedInstructor()">Assign Instructor</button>
         <button class="btn" onclick="closeAssignInstructorPanel()">Cancel</button>
       </div>
     </div>
@@ -175,4 +201,3 @@ if (!$session->isLoggedIn() || $session->getUserRole() !== 'admin') {
 <!-- Panel Overlay -->
 <div id="panelOverlay" class="panel-overlay" onclick="closeAllPanels()"></div>
 
-<script src="/Plagirism_Detection_System/assets/js/admin_courses.js"></script>

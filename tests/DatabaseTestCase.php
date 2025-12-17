@@ -107,10 +107,14 @@ abstract class DatabaseTestCase extends TestCase
             CREATE TABLE courses (
               id INT(11) NOT NULL AUTO_INCREMENT,
               name VARCHAR(255) NOT NULL,
+              description TEXT DEFAULT NULL,
               instructor_id INT(11) NOT NULL,
+              created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
               PRIMARY KEY (id),
               KEY fk_course_instructor (instructor_id),
-              CONSTRAINT fk_course_instructor FOREIGN KEY (instructor_id) REFERENCES users (id)
+              KEY idx_created_at (created_at),
+              CONSTRAINT fk_course_instructor FOREIGN KEY (instructor_id) REFERENCES users (id) ON DELETE SET NULL ON UPDATE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
         ");
 

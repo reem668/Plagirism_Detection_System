@@ -1,320 +1,516 @@
+/**
+ * Admin Courses Management - AJAX-based dynamic course management
+ * All operations use AJAX with no hardcoded values
+ */
 
-// Initialize with hardcoded data
-let courses = [
-  { 
-    id: 1, 
-    code: 'CS101', 
-    name: 'Introduction to Programming', 
-    department: 'Computer Science', 
-    term: 'Fall 2024',
-    instructors: [4]
-  },
-  { 
-    id: 2, 
-    code: 'ENG201', 
-    name: 'Academic Writing', 
-    department: 'English', 
-    term: 'Fall 2024',
-    instructors: [5]
-  },
-  { 
-    id: 3, 
-    code: 'MATH150', 
-    name: 'Calculus I', 
-    department: 'Mathematics', 
-    term: 'Spring 2025',
-    instructors: [4, 5]
-  },
-];
-
-let nextCourseId = 4;
+const BASE_URL = '/Plagirism_Detection_System';
 let currentCourseId = null;
+let instructors = [];
 
-function getUsers() {
-  const saved = localStorage.getItem('users');
-  if (saved) {
-    return JSON.parse(saved).users;
-  }
-  return [
-    { id: 4, name: 'Dr. Ahmed Mohamed', email: 'ahmed.m@university.edu', role: 'instructor' },
-    { id: 5, name: 'Prof. Sara Ali', email: 'sara.ali@university.edu', role: 'instructor' },
-  ];
-}
-
-function loadCourses() {
-  const saved = localStorage.getItem('courses');
-  if (saved) {
-    const data = JSON.parse(saved);
-    courses = data.courses;
-    nextCourseId = data.nextCourseId;
-  }
-}
-
-function saveCourses() {
-  localStorage.setItem('courses', JSON.stringify({
-    courses: courses,
-    nextCourseId: nextCourseId
-  }));
-  
-  const totalCourses = document.getElementById('totalCourses');
-  if (totalCourses) {
-    totalCourses.textContent = courses.length;
-  }
-}
-
+// Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
-  loadCourses();
-  renderCourses();
+    loadCourses();
+    loadInstructors();
+    
+    // Ensure form is hidden initially
+    const formContainer = document.getElementById('addCourseFormContainer');
+    if (formContainer) {
+        formContainer.style.display = 'none';
+    }
+    
+    // Attach event listener to toggle button
+    const toggleBtn = document.getElementById('toggleAddCourseBtn');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', toggleAddCourseForm);
+    }
+    
+    // Attach event listener to cancel button
+    const cancelBtn = document.getElementById('cancelAddCourseBtn');
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', toggleAddCourseForm);
+    }
 });
 
-function renderCourses() {
-  const tbody = document.getElementById('coursesTableBody');
-  
-  if (courses.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#a7b7d6;padding:20px;">No courses yet. Create one above!</td></tr>';
-    return;
-  }
-  
-  tbody.innerHTML = courses.map(course => {
-    const instructorCount = course.instructors.length;
-    
-    return `
-      <tr>
-        <td><strong>${course.code}</strong></td>
-        <td>${course.name}</td>
-        <td>${course.department}</td>
-        <td>${course.term}</td>
-        <td><span class="badge">${instructorCount} Assigned</span></td>
-        <td>
-          <button class="btn small" onclick="viewCourseDetails(${course.id})">👁️ View</button>
-          <button class="btn small" onclick="openEditCoursePanel(${course.id})">✏️ Edit</button>
-          <button class="btn small danger" onclick="deleteCourse(${course.id})">🗑️ Delete</button>
-        </td>
-      </tr>
-    `;
-  }).join('');
+/**
+ * Load all courses from server
+ */
+function loadCourses() {
+    fetch(`${BASE_URL}/ajax/get_courses.php?page=1&limit=100`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                renderCourses(data.data || []);
+            } else {
+                showCourseNotification('Error loading courses: ' + data.message, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showCourseNotification('Failed to load courses', 'error');
+        });
 }
 
-function addCourse(event) {
-  event.preventDefault();
-  
-  const code = document.getElementById('newCourseCode').value.trim();
-  const name = document.getElementById('newCourseName').value.trim();
-  const department = document.getElementById('newDepartment').value.trim();
-  const term = document.getElementById('newTerm').value;
-
-  if (courses.find(c => c.code.toLowerCase() === code.toLowerCase())) {
-    showCourseNotification('⚠️ Course code already exists!', 'error');
-    return;
-  }
-
-  const newCourse = {
-    id: nextCourseId++,
-    code: code,
-    name: name,
-    department: department,
-    term: term,
-    instructors: []
-  };
-
-  courses.push(newCourse);
-  saveCourses();
-
-  document.getElementById('addCourseForm').reset();
-  renderCourses();
-  showCourseNotification('✅ Course created successfully!', 'success');
-}
-
-function viewCourseDetails(courseId) {
-  currentCourseId = courseId;
-  const course = courses.find(c => c.id === courseId);
-  if (!course) return;
-
-  document.getElementById('panelCourseCode').textContent = course.code;
-  document.getElementById('panelCourseName').textContent = course.name;
-  document.getElementById('panelDepartment').textContent = course.department;
-  document.getElementById('panelTerm').textContent = course.term;
-
-  const users = getUsers();
-  const instructors = course.instructors.map(id => users.find(u => u.id === id)).filter(u => u);
-  
-  document.getElementById('panelInstructorsList').innerHTML = instructors.length > 0 
-    ? instructors.map(inst => `
-      <div class="instructor-item">
-        <div class="instructor-info">
-          <strong>${inst.name}</strong>
-          <small>${inst.email}</small>
-        </div>
-        <button class="btn small danger" onclick="removeInstructor(${courseId}, ${inst.id})">Remove</button>
-      </div>
-    `).join('')
-    : '<p style="color:#a7b7d6;padding:10px;">No instructors assigned yet.</p>';
-
-  openPanel('courseDetailsPanel');
-}
-
-function closeCoursePanel() {
-  closePanel('courseDetailsPanel');
-  currentCourseId = null;
-}
-
-function openEditCoursePanel(courseId) {
-  const course = courses.find(c => c.id === courseId);
-  if (!course) return;
-
-  document.getElementById('editCourseId').value = course.id;
-  document.getElementById('editCourseCode').value = course.code;
-  document.getElementById('editCourseName').value = course.name;
-  document.getElementById('editDepartment').value = course.department;
-  document.getElementById('editTerm').value = course.term;
-
-  openPanel('editCoursePanel');
-}
-
-function closeEditCoursePanel() {
-  closePanel('editCoursePanel');
-}
-
-function saveCourseEdit(event) {
-  event.preventDefault();
-
-  const courseId = parseInt(document.getElementById('editCourseId').value);
-  const code = document.getElementById('editCourseCode').value.trim();
-  const name = document.getElementById('editCourseName').value.trim();
-  const department = document.getElementById('editDepartment').value.trim();
-  const term = document.getElementById('editTerm').value;
-
-  if (courses.find(c => c.code.toLowerCase() === code.toLowerCase() && c.id !== courseId)) {
-    showCourseNotification('⚠️ Course code already exists!', 'error');
-    return;
-  }
-
-  const course = courses.find(c => c.id === courseId);
-  if (course) {
-    course.code = code;
-    course.name = name;
-    course.department = department;
-    course.term = term;
-    
-    saveCourses();
-    renderCourses();
-    closeEditCoursePanel();
-    showCourseNotification('✅ Course updated successfully!', 'success');
-  }
-}
-
-function deleteCourse(courseId) {
-  if (!confirm('Are you sure you want to delete this course?')) return;
-
-  const index = courses.findIndex(c => c.id === courseId);
-  if (index !== -1) {
-    courses.splice(index, 1);
-    saveCourses();
-    renderCourses();
-    showCourseNotification('🗑️ Course deleted successfully!', 'success');
-  }
-}
-
-function openAssignInstructorPanel() {
-  const users = getUsers();
-  const instructors = users.filter(u => u.role === 'instructor');
-  const course = courses.find(c => c.id === currentCourseId);
-  
-  if (instructors.length === 0) {
-    alert('No instructors available! Please add instructors in User Management first.');
-    return;
-  }
-  
-  document.getElementById('instructorSelectList').innerHTML = instructors.map(inst => {
-    const isAssigned = course.instructors.includes(inst.id);
-    return `
-      <label class="instructor-option">
-        <input type="checkbox" value="${inst.id}" ${isAssigned ? 'checked disabled' : ''}>
-        <div class="instructor-option-info">
-          <strong>${inst.name}</strong>
-          <small>${inst.email}</small>
-          ${isAssigned ? '<span class="assigned-badge">✓ Already assigned</span>' : ''}
-        </div>
-      </label>
-    `;
-  }).join('');
-
-  openPanel('assignInstructorPanel');
-}
-
-function closeAssignInstructorPanel() {
-  closePanel('assignInstructorPanel');
-}
-
-function assignSelectedInstructors() {
-  const checkboxes = document.querySelectorAll('#instructorSelectList input[type="checkbox"]:checked:not(:disabled)');
-  const instructorIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
-  
-  if (instructorIds.length === 0) {
-    showCourseNotification('⚠️ Please select at least one instructor!', 'error');
-    return;
-  }
-
-  const course = courses.find(c => c.id === currentCourseId);
-  if (course) {
-    instructorIds.forEach(id => {
-      if (!course.instructors.includes(id)) {
-        course.instructors.push(id);
-      }
-    });
-    
-    saveCourses();
-    closeAssignInstructorPanel();
-    viewCourseDetails(currentCourseId);
-    renderCourses();
-    showCourseNotification('✅ Instructor(s) assigned successfully!', 'success');
-  }
-}
-
-function removeInstructor(courseId, instructorId) {
-  if (!confirm('Remove this instructor from the course?')) return;
-
-  const course = courses.find(c => c.id === courseId);
-  if (course) {
-    const index = course.instructors.indexOf(instructorId);
-    if (index !== -1) {
-      course.instructors.splice(index, 1);
-      saveCourses();
-      viewCourseDetails(courseId);
-      renderCourses();
-      showCourseNotification('✅ Instructor removed successfully!', 'success');
+/**
+ * Load all instructors from server
+ */
+function loadInstructors() {
+    const loadingHint = document.getElementById('instructorLoadingHint');
+    if (loadingHint) {
+        loadingHint.style.display = 'block';
     }
-  }
+    
+    fetch(`${BASE_URL}/ajax/get_instructors.php`)
+        .then(response => response.json())
+        .then(data => {
+            if (loadingHint) {
+                loadingHint.style.display = 'none';
+            }
+            
+            if (data.success && data.data) {
+                instructors = data.data;
+                populateInstructorDropdowns();
+            } else {
+                showCourseNotification('Error loading instructors: ' + (data.message || 'Unknown error'), 'error');
+                populateInstructorDropdowns(); // Still populate with empty message
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            if (loadingHint) {
+                loadingHint.style.display = 'none';
+            }
+            showCourseNotification('Failed to load instructors', 'error');
+            populateInstructorDropdowns(); // Still populate with empty message
+        });
 }
 
+/**
+ * Populate instructor dropdowns in forms
+ */
+function populateInstructorDropdowns() {
+    const addDropdown = document.getElementById('newInstructorId');
+    const editDropdown = document.getElementById('editInstructorId');
+    const assignDropdown = document.getElementById('assignInstructorSelect');
+    const loadingHint = document.getElementById('instructorLoadingHint');
+    
+    if (loadingHint) {
+        loadingHint.style.display = 'none';
+    }
+    
+    if (!instructors || instructors.length === 0) {
+        const options = '<option value="">No instructors available</option>';
+        if (addDropdown) addDropdown.innerHTML = options;
+        if (editDropdown) editDropdown.innerHTML = options;
+        if (assignDropdown) assignDropdown.innerHTML = options;
+        return;
+    }
+    
+    const options = instructors.map(inst => 
+        `<option value="${inst.id}">${inst.name} (${inst.email})</option>`
+    ).join('');
+    
+    if (addDropdown) {
+        addDropdown.innerHTML = '<option value="">Select Instructor</option>' + options;
+    }
+    if (editDropdown) {
+        editDropdown.innerHTML = '<option value="">Select Instructor</option>' + options;
+    }
+    if (assignDropdown) {
+        assignDropdown.innerHTML = '<option value="">Select Instructor</option>' + options;
+    }
+}
+
+/**
+ * Toggle add course form visibility
+ * Made globally available for both event listeners and inline handlers
+ */
+function toggleAddCourseForm() {
+    const formContainer = document.getElementById('addCourseFormContainer');
+    const toggleBtn = document.getElementById('toggleAddCourseBtn');
+    
+    if (!formContainer) {
+        console.error('Form container not found');
+        return;
+    }
+    
+    if (formContainer.style.display === 'none' || !formContainer.style.display) {
+        formContainer.style.display = 'block';
+        if (toggleBtn) {
+            toggleBtn.innerHTML = '<i class="fas fa-times"></i> Cancel';
+        }
+        // Ensure instructors are loaded
+        if (instructors.length === 0) {
+            loadInstructors();
+        }
+    } else {
+        formContainer.style.display = 'none';
+        if (toggleBtn) {
+            toggleBtn.innerHTML = '<i class="fas fa-plus"></i> Create New Course';
+        }
+        // Reset form
+        const form = document.getElementById('addCourseForm');
+        if (form) {
+            form.reset();
+        }
+    }
+}
+
+/**
+ * Render courses table
+ */
+function renderCourses(courses) {
+    const tbody = document.getElementById('coursesTableBody');
+    
+    if (!courses || courses.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#a7b7d6;padding:20px;">No courses yet. Create one above!</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = courses.map(course => {
+        const instructorName = course.instructor_name || 'Unassigned';
+        const instructorEmail = course.instructor_email || '';
+        const description = course.description ? 
+            (course.description.length > 50 ? course.description.substring(0, 50) + '...' : course.description) : 
+            'No description';
+        const createdDate = course.created_at ? 
+            new Date(course.created_at).toLocaleDateString() : 
+            'N/A';
+        
+        return `
+            <tr>
+                <td><strong>${escapeHtml(course.name)}</strong></td>
+                <td>${escapeHtml(description)}</td>
+                <td>${escapeHtml(instructorName)}${instructorEmail ? '<br><small>' + escapeHtml(instructorEmail) + '</small>' : ''}</td>
+                <td>${createdDate}</td>
+                <td>
+                    <button class="btn small" onclick="viewCourseDetails(${course.id})">👁️ View</button>
+                    <button class="btn small" onclick="openEditCoursePanel(${course.id})">✏️ Edit</button>
+                    <button class="btn small danger" onclick="deleteCourse(${course.id})">🗑️ Delete</button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+/**
+ * Add new course
+ */
+function addCourse(event) {
+    event.preventDefault();
+    
+    const form = document.getElementById('addCourseForm');
+    const formData = new FormData(form);
+    
+    // Show loading state
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Creating...';
+    
+    fetch(`${BASE_URL}/ajax/add_course.php`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+        
+        if (data.success) {
+            form.reset();
+            loadCourses();
+            toggleAddCourseForm(); // Hide form after successful creation
+            showCourseNotification('✅ Course created successfully!', 'success');
+        } else {
+            showCourseNotification('⚠️ ' + data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+        showCourseNotification('Failed to create course', 'error');
+    });
+}
+
+/**
+ * View course details
+ */
+function viewCourseDetails(courseId) {
+    currentCourseId = courseId;
+    
+    fetch(`${BASE_URL}/ajax/get_course.php?id=${courseId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.data) {
+                const course = data.data;
+                
+                document.getElementById('panelCourseName').textContent = course.name || 'N/A';
+                document.getElementById('panelCourseDescription').textContent = course.description || 'No description';
+                document.getElementById('panelInstructorName').textContent = course.instructor_name || 'Unassigned';
+                document.getElementById('panelInstructorEmail').textContent = course.instructor_email || '';
+                document.getElementById('panelCreatedAt').textContent = course.created_at ? 
+                    new Date(course.created_at).toLocaleString() : 'N/A';
+                
+                openPanel('courseDetailsPanel');
+            } else {
+                showCourseNotification('Error loading course details: ' + data.message, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showCourseNotification('Failed to load course details', 'error');
+        });
+}
+
+/**
+ * Close course details panel
+ */
+function closeCoursePanel() {
+    closePanel('courseDetailsPanel');
+    currentCourseId = null;
+}
+
+/**
+ * Open edit course panel
+ */
+function openEditCoursePanel(courseId) {
+    currentCourseId = courseId;
+    
+    fetch(`${BASE_URL}/ajax/get_course.php?id=${courseId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.data) {
+                const course = data.data;
+                
+                document.getElementById('editCourseId').value = course.id;
+                document.getElementById('editCourseName').value = course.name || '';
+                document.getElementById('editCourseDescription').value = course.description || '';
+                document.getElementById('editInstructorId').value = course.instructor_id || '';
+                
+                openPanel('editCoursePanel');
+            } else {
+                showCourseNotification('Error loading course: ' + data.message, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showCourseNotification('Failed to load course', 'error');
+        });
+}
+
+/**
+ * Close edit course panel
+ */
+function closeEditCoursePanel() {
+    closePanel('editCoursePanel');
+    currentCourseId = null;
+}
+
+/**
+ * Save course edit
+ */
+function saveCourseEdit(event) {
+    event.preventDefault();
+    
+    const form = document.getElementById('editCourseForm');
+    const formData = new FormData(form);
+    
+    // Show loading state
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Saving...';
+    
+    fetch(`${BASE_URL}/ajax/edit_course.php`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+        
+        if (data.success) {
+            loadCourses();
+            closeEditCoursePanel();
+            showCourseNotification('✅ Course updated successfully!', 'success');
+        } else {
+            showCourseNotification('⚠️ ' + data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+        showCourseNotification('Failed to update course', 'error');
+    });
+}
+
+/**
+ * Delete course
+ */
+function deleteCourse(courseId) {
+    if (!confirm('Are you sure you want to delete this course? This action cannot be undone.')) {
+        return;
+    }
+    
+    // Get CSRF token from the page (injected by admin.php)
+    const csrfInput = document.querySelector('input[name="_csrf"]');
+    const csrf = csrfInput ? csrfInput.value : '';
+    
+    const formData = new FormData();
+    formData.append('_csrf', csrf);
+    formData.append('course_id', courseId);
+    
+    fetch(`${BASE_URL}/ajax/delete_course.php`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            loadCourses();
+            showCourseNotification('🗑️ Course deleted successfully!', 'success');
+        } else {
+            showCourseNotification('⚠️ ' + data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showCourseNotification('Failed to delete course', 'error');
+    });
+}
+
+/**
+ * Open assign instructor panel
+ */
+function openAssignInstructorPanel() {
+    if (!currentCourseId) {
+        showCourseNotification('No course selected', 'error');
+        return;
+    }
+    
+    document.getElementById('assignInstructorCourseId').value = currentCourseId;
+    document.getElementById('assignInstructorSelect').value = '';
+    
+    openPanel('assignInstructorPanel');
+}
+
+/**
+ * Close assign instructor panel
+ */
+function closeAssignInstructorPanel() {
+    closePanel('assignInstructorPanel');
+}
+
+/**
+ * Assign selected instructor
+ */
+function assignSelectedInstructor() {
+    const courseId = document.getElementById('assignInstructorCourseId').value;
+    const instructorId = document.getElementById('assignInstructorSelect').value;
+    const csrf = document.getElementById('assignInstructorCsrf').value;
+    
+    if (!courseId || !instructorId) {
+        showCourseNotification('⚠️ Please select an instructor!', 'error');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('_csrf', csrf);
+    formData.append('course_id', courseId);
+    formData.append('instructor_id', instructorId);
+    
+    fetch(`${BASE_URL}/ajax/assign_instructor.php`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            loadCourses();
+            closeAssignInstructorPanel();
+            if (currentCourseId) {
+                viewCourseDetails(currentCourseId);
+            }
+            showCourseNotification('✅ Instructor assigned successfully!', 'success');
+        } else {
+            showCourseNotification('⚠️ ' + data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showCourseNotification('Failed to assign instructor', 'error');
+    });
+}
+
+/**
+ * Show notification
+ */
 function showCourseNotification(message, type) {
-  const notification = document.getElementById('courseNotification');
-  notification.textContent = message;
-  notification.className = 'notice ' + type;
-  notification.style.display = 'block';
-
-  setTimeout(() => {
-    notification.style.display = 'none';
-  }, 3000);
+    const notification = document.getElementById('courseNotification');
+    if (!notification) return;
+    
+    notification.textContent = message;
+    notification.className = 'notice ' + type;
+    notification.style.display = 'block';
+    
+    setTimeout(() => {
+        notification.style.display = 'none';
+    }, 5000);
 }
 
-// Panel helper functions
+/**
+ * Panel helper functions
+ */
 function openPanel(panelId) {
-  document.getElementById(panelId).classList.add('open');
-  document.getElementById('panelOverlay').classList.add('active');
-  document.body.style.overflow = 'hidden';
+    const panel = document.getElementById(panelId);
+    const overlay = document.getElementById('panelOverlay');
+    
+    if (panel) panel.classList.add('open');
+    if (overlay) overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
 }
 
 function closePanel(panelId) {
-  document.getElementById(panelId).classList.remove('open');
-  document.getElementById('panelOverlay').classList.remove('active');
-  document.body.style.overflow = '';
+    const panel = document.getElementById(panelId);
+    const overlay = document.getElementById('panelOverlay');
+    
+    if (panel) panel.classList.remove('open');
+    if (overlay) overlay.classList.remove('active');
+    document.body.style.overflow = '';
 }
 
 function closeAllPanels() {
-  document.querySelectorAll('.side-panel').forEach(panel => {
-    panel.classList.remove('open');
-  });
-  document.getElementById('panelOverlay').classList.remove('active');
-  document.body.style.overflow = '';
+    document.querySelectorAll('.side-panel').forEach(panel => {
+        panel.classList.remove('open');
+    });
+    const overlay = document.getElementById('panelOverlay');
+    if (overlay) overlay.classList.remove('active');
+    document.body.style.overflow = '';
 }
+
+/**
+ * Escape HTML to prevent XSS
+ */
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Make functions globally available for inline handlers (backup)
+// This ensures functions are available even if script loads after HTML
+window.toggleAddCourseForm = toggleAddCourseForm;
+window.addCourse = addCourse;
+window.viewCourseDetails = viewCourseDetails;
+window.closeCoursePanel = closeCoursePanel;
+window.openEditCoursePanel = openEditCoursePanel;
+window.closeEditCoursePanel = closeEditCoursePanel;
+window.saveCourseEdit = saveCourseEdit;
+window.deleteCourse = deleteCourse;
+window.openAssignInstructorPanel = openAssignInstructorPanel;
+window.closeAssignInstructorPanel = closeAssignInstructorPanel;
+window.assignSelectedInstructor = assignSelectedInstructor;
+window.closeAllPanels = closeAllPanels;
