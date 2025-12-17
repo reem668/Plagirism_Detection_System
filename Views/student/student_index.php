@@ -123,6 +123,7 @@ foreach ($submissions as $sub) {
 <title>Plagiarism Detection - Student Dashboard</title>
 <link rel="stylesheet" href="../../assets/css/student.css">
 <link rel="stylesheet" href="../../assets/css/user.css">
+<link rel="stylesheet" href="../../assets/css/chatbot.css">
 </head>
 <body>
 
@@ -674,6 +675,9 @@ document.addEventListener('DOMContentLoaded', function(){
     })();
 });
 </script>
+
+<!-- Chatbot Widget -->
+<script src="../../assets/js/chatbot.js"></script>
 
 </body> 
 </html>
