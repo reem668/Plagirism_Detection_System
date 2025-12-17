@@ -13,9 +13,11 @@ if (!defined('ADMIN_ACCESS')) {
 // Additional authentication verification
 require_once __DIR__ . '/../../Helpers/SessionManager.php';
 require_once __DIR__ . '/../../Middleware/AuthMiddleware.php';
+require_once __DIR__ . '/../../Helpers/Csrf.php';
 
 use Helpers\SessionManager;
 use Middleware\AuthMiddleware;
+use Helpers\Csrf;
 
 $session = SessionManager::getInstance();
 $auth = new AuthMiddleware();
@@ -174,4 +176,17 @@ if (!$session->isLoggedIn() || $session->getUserRole() !== 'admin') {
 
 <!-- Panel Overlay -->
 <div id="panelOverlay" class="panel-overlay" onclick="closeAllPanels()"></div>
+
+<script>
+  // Fallback: load admin_courses.js if page is opened directly (not via admin.php)
+  (function(){
+    if (typeof addCourse !== 'function') {
+      var s = document.createElement('script');
+      s.src = '/Plagirism_Detection_System/assets/js/admin_courses.js';
+      s.defer = true;
+      s.crossOrigin = 'anonymous';
+      document.body.appendChild(s);
+    }
+  })();
+</script>
 
