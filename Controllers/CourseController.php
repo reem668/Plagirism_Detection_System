@@ -272,19 +272,10 @@ class CourseController {
             return ResponseFactory::error('Course not found', 404);
         }
         
-        // Check if course has submissions
-        $submissionStmt = $this->conn->prepare("SELECT COUNT(*) as count FROM submissions WHERE course_id = ?");
-        $submissionStmt->bind_param("i", $courseId);
-        $submissionStmt->execute();
-        $submissionResult = $submissionStmt->get_result();
-        $submissionCount = $submissionResult->fetch_assoc()['count'];
-        $submissionStmt->close();
+        // Note: Database CASCADE DELETE will automatically delete submissions
+        // No need to check or manually delete submissions
         
-        if ($submissionCount > 0) {
-            return ResponseFactory::error("Cannot delete course with {$submissionCount} submission(s). Please remove submissions first.", 400);
-        }
-        
-        // Delete course
+        // Delete course (CASCADE DELETE will handle submissions automatically)
         if ($this->repository->delete($courseId)) {
             // Log action
             $this->logAction('delete_course', $courseId, "Deleted course: {$course['name']}");

@@ -37,23 +37,27 @@ class Instructor {
     public function getSubmissions($instructor_id) {
         $submissions = [];
 
-        // Fetch submissions where course instructor_id matches this instructor
-        // Also include submissions where teacher name matches (for backward compatibility)
+        // Fetch submissions where instructor_id matches OR course instructor_id matches
+        // Automatically display the instructor's assigned course (one instructor = one course)
+        // Uses COALESCE to fetch course even when course_id is NULL in submissions
         $sql = "
-            SELECT s.id, s.user_id, s.course_id, s.teacher, s.text_content, s.file_path, s.stored_name,
+            SELECT s.id, s.user_id, s.course_id, s.instructor_id, s.teacher, s.text_content, s.file_path, s.stored_name,
                    s.file_size, s.similarity, s.status, s.created_at, s.feedback,
                    u.name AS student_name, u.email AS student_email,
-                   c.name AS course_name
+                   COALESCE(
+                       c.name,
+                       (SELECT name FROM courses WHERE instructor_id = ? LIMIT 1)
+                   ) AS course_name
             FROM submissions s
             JOIN users u ON s.user_id = u.id
             LEFT JOIN courses c ON s.course_id = c.id
-            WHERE (c.instructor_id = ? OR s.teacher = (SELECT name FROM users WHERE id = ? AND role='instructor'))
+            WHERE (s.instructor_id = ? OR c.instructor_id = ? OR s.teacher = (SELECT name FROM users WHERE id = ? AND role='instructor'))
             AND s.status <> 'deleted'
             ORDER BY s.created_at DESC
         ";
 
         $stmt = $this->conn->prepare($sql);
-        $stmt->bind_param("ii", $instructor_id, $instructor_id);
+        $stmt->bind_param("iiii", $instructor_id, $instructor_id, $instructor_id, $instructor_id);
         $stmt->execute();
         $result = $stmt->get_result();
 
@@ -68,23 +72,27 @@ class Instructor {
     public function getTrash($instructor_id) {
         $trash = [];
 
-        // Fetch deleted submissions where course instructor_id matches this instructor
-        // Also include submissions where teacher name matches (for backward compatibility)
+        // Fetch deleted submissions where instructor_id matches OR course instructor_id matches
+        // Automatically display the instructor's assigned course (one instructor = one course)
+        // Uses COALESCE to fetch course even when course_id is NULL in submissions
         $sql = "
-            SELECT s.id, s.user_id, s.course_id, s.teacher, s.text_content, s.file_path, s.stored_name,
+            SELECT s.id, s.user_id, s.course_id, s.instructor_id, s.teacher, s.text_content, s.file_path, s.stored_name,
                    s.file_size, s.similarity, s.status, s.created_at, s.feedback,
                    u.name AS student_name, u.email AS student_email,
-                   c.name AS course_name
+                   COALESCE(
+                       c.name,
+                       (SELECT name FROM courses WHERE instructor_id = ? LIMIT 1)
+                   ) AS course_name
             FROM submissions s
             JOIN users u ON s.user_id = u.id
             LEFT JOIN courses c ON s.course_id = c.id
-            WHERE (c.instructor_id = ? OR s.teacher = (SELECT name FROM users WHERE id = ? AND role='instructor'))
+            WHERE (s.instructor_id = ? OR c.instructor_id = ? OR s.teacher = (SELECT name FROM users WHERE id = ? AND role='instructor'))
             AND s.status = 'deleted'
             ORDER BY s.created_at DESC
         ";
 
         $stmt = $this->conn->prepare($sql);
-        $stmt->bind_param("ii", $instructor_id, $instructor_id);
+        $stmt->bind_param("iiii", $instructor_id, $instructor_id, $instructor_id, $instructor_id);
         $stmt->execute();
         $result = $stmt->get_result();
 

@@ -128,7 +128,6 @@ if ($currentInstructor['id'] != $instructor_id) {
                 <h1>📚 Instructor Dashboard</h1>
                 <p>Review and manage student submissions</p>
             </div>
-        <?php endif; ?>
 
             <?php if ($success_msg): ?>
                 <div class="alert alert-success"
@@ -188,9 +187,7 @@ if ($currentInstructor['id'] != $instructor_id) {
                                     </div>
                                 </div>
                                 <div class="submission-content">
-                                    <?php if (!empty($submission['course_name'])): ?>
-                                        <h4>📚 Course: <?php echo htmlspecialchars($submission['course_name']); ?></h4>
-                                    <?php endif; ?>
+                                    <h4>📚 Course: <?php echo htmlspecialchars($submission['course_name'] ?? 'General Submission'); ?></h4>
                                     <h4>📄 Document Title: <?php echo htmlspecialchars($submission['stored_name'] ?? 'N/A'); ?></h4>
                                     <p><?php echo nl2br(htmlspecialchars(substr($submission['text_content'] ?? '', 0, 300))); ?><?php echo strlen($submission['text_content'] ?? '') > 300 ? '...' : ''; ?>
                                     </p>
@@ -257,9 +254,7 @@ if ($currentInstructor['id'] != $instructor_id) {
                                     </div>
                                 </div>
                                 <div class="submission-content">
-                                    <?php if (!empty($submission['course_name'])): ?>
-                                        <h4>📚 Course: <?php echo htmlspecialchars($submission['course_name']); ?></h4>
-                                    <?php endif; ?>
+                                    <h4>📚 Course: <?php echo htmlspecialchars($submission['course_name'] ?? 'General Submission'); ?></h4>
                                     <h4>📄 Document Title: <?php echo htmlspecialchars($submission['stored_name'] ?? 'N/A'); ?></h4>
                                     <p><?php echo nl2br(htmlspecialchars(substr($submission['text_content'] ?? '', 0, 300))); ?><?php echo strlen($submission['text_content'] ?? '') > 300 ? '...' : ''; ?>
                                     </p>

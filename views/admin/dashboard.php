@@ -25,6 +25,13 @@ if (!$session->isLoggedIn() || $session->getUserRole() !== 'admin') {
     header("Location: /Plagirism_Detection_System/signup.php");
     exit();
 }
+
+// Fetch dashboard statistics
+require_once __DIR__ . '/../../Controllers/DashboardController.php';
+use Controllers\DashboardController;
+
+$dashboardController = new DashboardController();
+$stats = $dashboardController->getStatistics();
 ?>
 
 <section class="dashboard">
@@ -35,7 +42,7 @@ if (!$session->isLoggedIn() || $session->getUserRole() !== 'admin') {
     <div class="stat-card gradient-blue">
       <div class="icon-wrap"><i class="fas fa-users"></i></div>
       <div class="stat-body">
-        <div class="stat-number" id="totalUsers">6</div>
+        <div class="stat-number" id="totalUsers"><?= htmlspecialchars($stats['totalUsers'] ?? 0) ?></div>
         <div class="stat-label">Total Users</div>
       </div>
     </div>
@@ -43,7 +50,7 @@ if (!$session->isLoggedIn() || $session->getUserRole() !== 'admin') {
     <div class="stat-card gradient-green">
       <div class="icon-wrap"><i class="fas fa-file-alt"></i></div>
       <div class="stat-body">
-        <div class="stat-number" id="totalSubmissions">5</div>
+        <div class="stat-number" id="totalSubmissions"><?= htmlspecialchars($stats['totalSubmissions'] ?? 0) ?></div>
         <div class="stat-label">Total Submissions</div>
       </div>
     </div>
@@ -51,7 +58,7 @@ if (!$session->isLoggedIn() || $session->getUserRole() !== 'admin') {
     <div class="stat-card gradient-purple">
       <div class="icon-wrap"><i class="fas fa-book-open"></i></div>
       <div class="stat-body">
-        <div class="stat-number" id="totalCourses">3</div>
+        <div class="stat-number" id="totalCourses"><?= htmlspecialchars($stats['totalCourses'] ?? 0) ?></div>
         <div class="stat-label">Total Courses</div>
       </div>
     </div>
@@ -59,7 +66,7 @@ if (!$session->isLoggedIn() || $session->getUserRole() !== 'admin') {
     <div class="stat-card gradient-red">
       <div class="icon-wrap"><i class="fas fa-exclamation-triangle"></i></div>
       <div class="stat-body">
-        <div class="stat-number" id="highRiskCount">0</div>
+        <div class="stat-number" id="highRiskCount"><?= htmlspecialchars($stats['highRiskCount'] ?? 0) ?></div>
         <div class="stat-label">High-Risk Submissions</div>
       </div>
     </div>
@@ -96,6 +103,11 @@ if (!$session->isLoggedIn() || $session->getUserRole() !== 'admin') {
     </div>
   </div>
 </section>
+
+<!-- Pass PHP stats data to JavaScript -->
+<script>
+  window.dashboardStats = <?= json_encode($stats) ?>;
+</script>
 
 <!-- Load Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
