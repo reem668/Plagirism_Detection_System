@@ -142,9 +142,20 @@ public function getStats($instructor_id = null) {
     $instructorName = $instructorData['name'] ?? '';
     $instructorStmt->close();
     
-    // Get count of students enrolled
-    $studentResult = $this->conn->query("SELECT COUNT(*) AS students_enrolled FROM users WHERE role='student'");
+    // Get count of students enrolled FOR THIS INSTRUCTOR
+    $studentQuery = "
+        SELECT COUNT(DISTINCT u.id) AS students_enrolled
+        FROM users u
+        JOIN submissions s ON s.user_id = u.id
+        LEFT JOIN courses c ON s.course_id = c.id
+        WHERE (c.instructor_id = ? OR s.teacher = ?)
+    ";
+    $stmt = $this->conn->prepare($studentQuery);
+    $stmt->bind_param("is", $instructor_id, $instructorName);
+    $stmt->execute();
+    $studentResult = $stmt->get_result();
     $studentData = $studentResult->fetch_assoc();
+    $stmt->close();
     
     // Count total submissions (excluding deleted) for this instructor
     $totalQuery = "
@@ -215,12 +226,34 @@ $stmt->close();
         'rejected_submissions' => $rejectedData['rejected_submissions'] ?? 0
     ];
 }
-    public function getEnrolledStudents() {
+
+    /**
+     * Get students who have submissions assigned to this instructor
+     */
+    public function getEnrolledStudents(int $instructor_id): array {
         $students = [];
-        $result = $this->conn->query("SELECT * FROM users WHERE role='student'");
+
+        $sql = "
+            SELECT DISTINCT u.id, u.name, u.email
+            FROM users u
+            JOIN submissions s ON s.user_id = u.id
+            LEFT JOIN courses c ON s.course_id = c.id
+            WHERE (c.instructor_id = ? OR s.teacher = (
+                SELECT name FROM users WHERE id = ? AND role='instructor'
+            ))
+            ORDER BY u.name ASC
+        ";
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param("ii", $instructor_id, $instructor_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
         while ($row = $result->fetch_assoc()) {
             $students[] = $row;
         }
+
+        $stmt->close();
         return $students;
     }
 

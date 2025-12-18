@@ -196,9 +196,8 @@ class SubmissionController {
         // Get ALL non-trashed submissions (pending, accepted, rejected, active)
         // This is the key fix - we want to show accepted/rejected submissions!
         $stmt = $this->conn->prepare("
-            SELECT s.*, u.name as teacher
+            SELECT s.*
             FROM submissions s
-            LEFT JOIN users u ON s.course_id = u.id AND u.role = 'instructor'
             WHERE s.user_id = ? AND s.status != 'deleted'
             ORDER BY s.created_at DESC
         ");

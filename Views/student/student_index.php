@@ -1,4 +1,7 @@
 <?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 /**
  * Protected Student Dashboard
  * Only accessible by authenticated student users
@@ -11,7 +14,13 @@ require_once __DIR__ . '/../../Helpers/SessionManager.php';
 require_once __DIR__ . '/../../Middleware/AuthMiddleware.php';
 require_once __DIR__ . '/../../Helpers/Csrf.php';
 require_once __DIR__ . '/../../Controllers/SubmissionController.php';
-require_once __DIR__ . '/../../includes/db.php';
+// Ensure global database connection
+if (!isset($conn)) {
+    require __DIR__ . '/../../includes/db.php';
+}
+if (!isset($conn)) {
+    die("Database connection failed in student dashboard.");
+}
 
 use Helpers\SessionManager;
 use Middleware\AuthMiddleware;
@@ -177,7 +186,6 @@ function redirectWithMessage(string $location, string $message, string $type = '
 // ============================================
 
 // Handle DELETE action
-// Handle DELETE action
 if (isset($_POST['delete_id'])) {
     $submissionId = intval($_POST['delete_id']);
     $activeSubmissions = $ctrl->getUserSubmissions($userId, 'active');
@@ -231,62 +239,40 @@ if (isset($_POST['restore_id'])) {
 // Handle SUBMISSION
 $submissionResult = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete_id']) && !isset($_POST['restore_id'])) {
-    $_POST['user_id'] = $userId;
+    $_POST['user_id'] = $userId; // Force correct user ID
     $submissionResult = $ctrl->submit();
 }
 
-// Generate CSRF token for forms
-$csrfToken = Csrf::token();
-
-// Fetch submissions - only for authenticated user
-$submissions = $ctrl->getUserSubmissions($userId, 'visible');
+// ============================================
+// DATA FETCHING
+// ============================================
+$submissions = $ctrl->getUserSubmissions($userId, 'active');
 $deletedSubmissions = $ctrl->getUserSubmissions($userId, 'deleted');
+$instructors = fetchInstructors($conn);
+$notificationCount = countUnseenNotifications($submissions);
 
-// Fetch instructors from database using the controller's connection
-$instructors = [];
-try {
-    // Use reflection to access the controller's connection
-    $reflection = new ReflectionClass($ctrl);
-    $connProperty = $reflection->getProperty('conn');
-    $connProperty->setAccessible(true);
-    $conn = $connProperty->getValue($ctrl);
-
-    if ($conn && is_object($conn) && method_exists($conn, 'query')) {
-        $instructorQuery = $conn->query("SELECT id, name, email FROM users WHERE role='instructor' AND status='active' ORDER BY name ASC");
-        if ($instructorQuery && $instructorQuery->num_rows > 0) {
-            while ($row = $instructorQuery->fetch_assoc()) {
-                $instructors[] = $row;
-            }
-        }
-    }
-} catch (Exception $e) {
-    // Fallback: try direct database connection
-    $rootPath = dirname(dirname(__DIR__));
-    require_once $rootPath . '/includes/db.php';
-    if (isset($conn) && is_object($conn) && method_exists($conn, 'query')) {
-        $instructorQuery = $conn->query("SELECT id, name, email FROM users WHERE role='instructor' AND status='active' ORDER BY name ASC");
-        if ($instructorQuery && $instructorQuery->num_rows > 0) {
-            while ($row = $instructorQuery->fetch_assoc()) {
-                $instructors[] = $row;
-            }
-        }
-    }
+// ============================================
+// VIEW SELECTION (SERVER-SIDE FALLBACK)
+// ============================================
+$currentView = $_GET['view'] ?? 'home';
+$validViews = ['home', 'history', 'notifications', 'trash', 'chat'];
+if (!in_array($currentView, $validViews, true)) {
+    $currentView = 'home';
 }
-
+function isActiveView(string $view, string $currentView): string {
+    return $view === $currentView ? 'active' : '';
+}
 
 ?>
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Plagiarism Detection - Student Dashboard</title>
-<link rel="stylesheet" href="../../assets/css/student.css">
-<link rel="stylesheet" href="../../assets/css/user.css">
-<link rel="stylesheet" href="../../assets/css/chatbot.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plagiarism Detection - Student Dashboard</title>
+    <link rel="stylesheet" href="../../assets/css/student.css">
+    <link rel="stylesheet" href="../../assets/css/user.css">
 </head>
-
 <body>
 
 <!-- Sidebar -->
@@ -297,30 +283,18 @@ try {
         <p class="user-id">ID: <?= htmlspecialchars($userId, ENT_QUOTES) ?></p>
     </div>
     <div class="menu">
-        <a href="#" id="homeBtn" data-tooltip="Home">🏠</a>
-        <a href="#" id="historyBtn" data-tooltip="Past History">📜</a>
-        <a href="#" id="notificationsBtn" data-tooltip="Notifications" class="notification-link">
+        <a href="student_index.php?view=home" id="homeBtn" data-tooltip="Home">🏠</a>
+        <a href="student_index.php?view=history" id="historyBtn" data-tooltip="Past History">📜</a>
+        <a href="student_index.php?view=notifications" id="notificationsBtn" data-tooltip="Notifications" class="notification-link">
             🔔
-            <?php
-                // Count only submissions with feedback from instructor
-                $notificationCount = 0;
-                foreach ($submissions as $sub) {
-                    $hasFeedback = !empty($sub['feedback']);
-                    $isAccepted = $sub['status'] === 'accepted';
-                    $isRejected = $sub['status'] === 'rejected';
-
-                    // Only count if instructor took action
-                    if ($hasFeedback || $isAccepted || $isRejected) {
-                        $notificationCount++;
-                    }
-                }
-                if ($notificationCount > 0): ?>
-                    <span class="notification-badge"
-                        style="background: #ef4444; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; position: absolute; top: -5px; right: -5px; min-width: 18px; text-align: center; line-height: 14px; font-weight: bold;"><?= $notificationCount ?></span>
-                <?php endif; ?>
+            <?php if ($notificationCount > 0): ?>
+                <span id="notificationBadge" class="notification-badge">
+                    <?= $notificationCount ?>
+                </span>
+            <?php endif; ?>
         </a>
-        <a href="#" id="trashBtn" data-tooltip="Trash">🗑️</a>
-        <a href="#" id="chatBtn" data-tooltip="Chat with Instructor">💬</a>
+        <a href="student_index.php?view=trash" id="trashBtn" data-tooltip="Trash">🗑️</a>
+        <a href="student_index.php?view=chat" id="chatBtn" data-tooltip="Chat with Instructor">💬</a>
     </div>
     <a href="../../logout.php" class="logout" data-tooltip="Logout">↻</a>
 </nav>
@@ -343,7 +317,7 @@ try {
     <?php endif; ?>
 
     <!-- Submission Page -->
-    <section id="mainPage" class="page active">
+    <section id="mainPage" class="page <?= isActiveView('home', $currentView) ?>">
         <h1>Submit Your Work</h1>
         <div class="content-grid">
             <!-- Submission Form -->
@@ -408,11 +382,10 @@ try {
                 <?php endif; ?>
             </aside>
         </div>
-        <a href="<?= htmlspecialchars('../../logout.php', ENT_QUOTES) ?>" class="logout" data-tooltip="Logout">↻</a>
-    </nav>
+    </section>
 
     <!-- History Page -->
-    <section id="historyPage" class="page">
+    <section id="historyPage" class="page <?= isActiveView('history', $currentView) ?>">
         <h1>Past Submissions</h1>
         <?php if ($submissions): ?>
             <?php foreach ($submissions as $submission): 
@@ -464,7 +437,7 @@ try {
     </section>
 
     <!-- Notifications Page -->
-    <section id="notificationsPage" class="page">
+    <section id="notificationsPage" class="page <?= isActiveView('notifications', $currentView) ?>">
         <h1>🔔 Notifications</h1>
         <p class="page-description">Instructor updates on your submissions</p>
         
@@ -553,7 +526,7 @@ try {
     </section>
 
     <!-- Trash Page -->
-    <section id="trashPage" class="page">
+    <section id="trashPage" class="page <?= isActiveView('trash', $currentView) ?>">
         <h1>Trash</h1>
         <?php if ($deletedSubmissions): ?>
             <?php foreach ($deletedSubmissions as $submission): ?>
@@ -577,7 +550,7 @@ try {
     </section>
 
     <!-- Chat Page -->
-    <section id="chatPage" class="page">
+    <section id="chatPage" class="page <?= isActiveView('chat', $currentView) ?>">
         <h1>💬 Chat with Instructor</h1>
         
         <div class="chat-instructor-select">
@@ -624,11 +597,25 @@ document.addEventListener('DOMContentLoaded', function() {
         chat: 'chatPage'
     };
 
-    // Handle URL view parameter
-    const urlParams = new URLSearchParams(window.location.search);
-    const view = urlParams.get('view');
-    if (view && pages[view]) {
+    // Handle URL view parameter (with defensive coding so errors don't break navigation)
+    let view = 'home';
+    try {
+        if (window.URLSearchParams) {
+            const urlParams = new URLSearchParams(window.location.search);
+            view = urlParams.get('view') || 'home';
+        }
+    } catch (e) {
+        console.warn('Could not read view from URL, defaulting to home:', e);
+    }
+
+    // Debugging: Confirm JS is running
+    console.log('Student Index JS Loaded, initial view =', view);
+
+    // Show the page from URL (if valid), otherwise default to home
+    if (pages[view]) {
         showPage(pages[view]);
+    } else {
+        showPage(pages.home);
     }
 
     // Navigation button handlers
@@ -649,8 +636,27 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     function showPage(pageId) {
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        document.getElementById(pageId).classList.add('active');
+        try {
+            console.log('Switching to page:', pageId);
+            
+            // Hide all pages
+            document.querySelectorAll('.page').forEach(p => {
+                p.classList.remove('active');
+                p.style.display = 'none'; 
+            });
+
+            // Show target page
+            const target = document.getElementById(pageId);
+            if (target) {
+                target.classList.add('active');
+                target.style.display = 'block';
+            } else {
+                console.error('Target page not found:', pageId);
+                alert('Error: Page section not found: ' + pageId);
+            }
+        } catch (e) {
+            console.error('Navigation error:', e);
+        }
     }
 
     function markNotificationsAsSeen() {
@@ -669,132 +675,139 @@ document.addEventListener('DOMContentLoaded', function() {
     // ============================================
     // CHAT FUNCTIONALITY
     // ============================================
+    // ============================================
+    // CHAT FUNCTIONALITY
+    // ============================================
     const chatSelect = document.getElementById('chatInstructorSelect');
-    const chatWindow = document.getElementById('chatWindow');
-    const chatForm = document.getElementById('chatForm');
-    const chatInput = document.getElementById('chatMessage');
-    const chatSendBtn = document.getElementById('chatSendBtn');
     
-    let chatInstructorId = null;
-    let fetchInterval = null;
-
-    function renderMessages(messages) {
-        chatWindow.innerHTML = '';
+    // Only initialize chat if elements exist to prevent errors
+    if (chatSelect) {
+        const chatWindow = document.getElementById('chatWindow');
+        const chatForm = document.getElementById('chatForm');
+        const chatInput = document.getElementById('chatMessage');
+        const chatSendBtn = document.getElementById('chatSendBtn');
         
-        if (!messages || messages.length === 0) {
-            chatWindow.innerHTML = '<p class="chat-placeholder">No messages yet. Start the conversation!</p>';
-            return;
+        let chatInstructorId = null;
+        let fetchInterval = null;
+
+        function renderMessages(messages) {
+            if (!chatWindow) return;
+            chatWindow.innerHTML = '';
+            
+            if (!messages || messages.length === 0) {
+                chatWindow.innerHTML = '<p class="chat-placeholder">No messages yet. Start the conversation!</p>';
+                return;
+            }
+
+            messages.forEach(msg => {
+                const div = document.createElement('div');
+                div.className = 'chat-message ' + (msg.sender === 'student' ? 'chat-message-sent' : 'chat-message-received');
+                
+                const bubble = document.createElement('div');
+                bubble.className = 'chat-bubble';
+                bubble.innerHTML = `
+                    <strong class="chat-sender">${msg.sender_name}</strong><br>
+                    ${msg.message}<br>
+                    <small class="chat-time">${msg.time}</small>
+                `;
+                
+                div.appendChild(bubble);
+                chatWindow.appendChild(div);
+            });
+
+            chatWindow.scrollTop = chatWindow.scrollHeight;
         }
 
-        messages.forEach(msg => {
-            const div = document.createElement('div');
-            div.className = 'chat-message ' + (msg.sender === 'student' ? 'chat-message-sent' : 'chat-message-received');
+        async function fetchMessages() {
+            if (!chatInstructorId) return;
+
+            try {
+                const res = await fetch(`chat_fetch.php?instructor_id=${chatInstructorId}`);
+                const data = await res.json();
+                
+                if (data.success) {
+                    renderMessages(data.messages);
+                } else {
+                    console.error('Failed to fetch messages:', data.error);
+                }
+            } catch (err) {
+                console.error('Fetch messages error:', err);
+            }
+        }
+
+        chatSelect.addEventListener('change', function() {
+            chatInstructorId = chatSelect.value || null;
             
-            const bubble = document.createElement('div');
-            bubble.className = 'chat-bubble';
-            bubble.innerHTML = `
-                <strong class="chat-sender">${msg.sender_name}</strong><br>
-                ${msg.message}<br>
-                <small class="chat-time">${msg.time}</small>
-            `;
-            
-            div.appendChild(bubble);
-            chatWindow.appendChild(div);
+            if (fetchInterval) {
+                clearInterval(fetchInterval);
+                fetchInterval = null;
+            }
+
+            if (chatInstructorId) {
+                if (chatInput) chatInput.disabled = false;
+                if (chatSendBtn) chatSendBtn.disabled = false;
+                
+                if (chatWindow) chatWindow.innerHTML = '<p class="chat-placeholder">Loading messages...</p>';
+                fetchMessages();
+                
+                fetchInterval = setInterval(fetchMessages, 3000);
+            } else {
+                if (chatInput) chatInput.disabled = true;
+                if (chatSendBtn) chatSendBtn.disabled = true;
+                if (chatWindow) chatWindow.innerHTML = '<p class="chat-placeholder">Select an instructor to start chatting</p>';
+            }
         });
 
-        chatWindow.scrollTop = chatWindow.scrollHeight;
-    }
+        if (chatForm) {
+            chatForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                if (!chatInstructorId) {
+                    alert('Please select an instructor first!');
+                    return;
+                }
+                
+                const msg = chatInput.value.trim();
+                if (!msg) return;
 
-    async function fetchMessages() {
-        if (!chatInstructorId) return;
+                const originalMsg = msg;
+                chatInput.value = '';
 
-        try {
-            const res = await fetch(`chat_fetch.php?instructor_id=${chatInstructorId}`);
-            const data = await res.json();
-            
-            if (data.success) {
-                renderMessages(data.messages);
-            } else {
-                console.error('Failed to fetch messages:', data.error);
-            }
-        } catch (err) {
-            console.error('Fetch messages error:', err);
-        }
-    }
+                const formData = new FormData();
+                formData.append('_csrf', '<?= $csrfToken ?? "" ?>');
+                formData.append('instructor_id', chatInstructorId);
+                formData.append('message', msg);
 
-    chatSelect.addEventListener('change', function() {
-        chatInstructorId = chatSelect.value || null;
-        
-        if (fetchInterval) {
-            clearInterval(fetchInterval);
-            fetchInterval = null;
-        }
-
-        if (chatInstructorId) {
-            chatInput.disabled = false;
-            chatSendBtn.disabled = false;
-            
-            chatWindow.innerHTML = '<p class="chat-placeholder">Loading messages...</p>';
-            fetchMessages();
-            
-            fetchInterval = setInterval(fetchMessages, 3000);
-        } else {
-            chatInput.disabled = true;
-            chatSendBtn.disabled = true;
-            chatWindow.innerHTML = '<p class="chat-placeholder">Select an instructor to start chatting</p>';
-        }
-    });
-
-    chatForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        if (!chatInstructorId) {
-            alert('Please select an instructor first!');
-            return;
-        }
-        
-        const msg = chatInput.value.trim();
-        if (!msg) return;
-
-        const originalMsg = msg;
-        chatInput.value = '';
-
-        const formData = new FormData();
-        formData.append('_csrf', '<?= $csrfToken ?>');
-        formData.append('instructor_id', chatInstructorId);
-        formData.append('message', msg);
-
-        try {
-            const res = await fetch('chat_send.php', {
-                method: 'POST',
-                body: formData
+                try {
+                    const res = await fetch('chat_send.php', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const data = await res.json();
+                    
+                    if (data.success) {
+                        fetchMessages();
+                    } else {
+                        alert(data.message || 'Failed to send message');
+                        chatInput.value = originalMsg;
+                    }
+                } catch (err) {
+                    console.error('Send message error:', err);
+                    alert('Network error. Please check your connection.');
+                    chatInput.value = originalMsg;
+                }
             });
-            
-            const data = await res.json();
-            
-            if (data.success) {
-                fetchMessages();
-            } else {
-                alert(data.message || 'Failed to send message');
-                chatInput.value = originalMsg;
-            }
-        } catch (err) {
-            console.error('Send message error:', err);
-            alert('Network error. Please check your connection.');
-            chatInput.value = originalMsg;
         }
-    });
 
-    window.addEventListener('beforeunload', function() {
-        if (fetchInterval) {
-            clearInterval(fetchInterval);
-        }
-    });
+        window.addEventListener('beforeunload', function() {
+            if (fetchInterval) {
+                clearInterval(fetchInterval);
+            }
+        });
+    }
 });
 </script>
 
-<!-- Chatbot Widget -->
-<script src="../../assets/js/chatbot.js"></script>
-
-</body> 
+</body>
 </html>

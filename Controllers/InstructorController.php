@@ -101,8 +101,9 @@ public function getStats(int $instructor_id): array {
             exit;
         }
 
-        $stats = $this->instructorModel->getStats();
-       $enrolled_students = $this->getEnrolledStudents($instructor_id);
+        // Stats and lists scoped to THIS instructor
+        $stats = $this->instructorModel->getStats($instructor_id);
+        $enrolled_students = $this->getEnrolledStudents($instructor_id);
         $submissions = $this->instructorModel->getSubmissions($instructor_id);
         $trash = $this->instructorModel->getTrash($instructor_id);
 
