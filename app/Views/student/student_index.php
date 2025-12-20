@@ -278,7 +278,7 @@ function isActiveView(string $view, string $currentView): string {
     <title>Plagiarism Detection - Student Dashboard</title>
     <link rel="stylesheet" href="/Plagirism_Detection_System/assets/css/student.css">
 <link rel="stylesheet" href="/Plagirism_Detection_System/assets/css/user.css">
-
+<link rel="stylesheet" href="/Plagirism_Detection_System/assets/css/chatbot.css">
 </head>
 <body>
 
@@ -597,6 +597,7 @@ function isActiveView(string $view, string $currentView): string {
 </script>
 <script src="/Plagirism_Detection_System/assets/js/student_dashboard.js"></script>
 <script src="/Plagirism_Detection_System/assets/js/chat.js"></script>
+<script src="/Plagirism_Detection_System/assets/js/chatbot.js"></script>
 
 
 
