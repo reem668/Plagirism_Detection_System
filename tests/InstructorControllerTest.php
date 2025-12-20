@@ -43,7 +43,7 @@ class TestableInstructorController {
     }
     
     public function getEnrolledStudents($instructor_id) {
-        return $this->instructorModel->getEnrolledStudents();
+        return $this->instructorModel->getEnrolledStudents($instructor_id);
     }
     
     public function getSubmissions(int $instructor_id): array {

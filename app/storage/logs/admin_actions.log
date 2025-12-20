@@ -1,0 +1,16 @@
+[2025-12-20 18:01:45] Admin: Test Admin (ID: 10) | Action: add_user | Target User ID: 11 | Description: Added user: New Student (newstudent@test.com) | IP: unknown
+[2025-12-20 18:01:45] Admin: Test Admin (ID: 13) | Action: add_user | Target User ID: 15 | Description: Added user: Another User (duplicate@test.com) | IP: unknown
+[2025-12-20 18:01:45] Admin: Test Admin (ID: 17) | Action: edit_user | Target User ID: 18 | Description: Edited user: Updated Name (updated@test.com) | IP: unknown
+[2025-12-20 18:01:45] Admin: Test Admin (ID: 20) | Action: delete_user | Target User ID: 21 | Description: Deleted user: Test User (6946e489c5e2e.delete@test.com) | IP: unknown
+[2025-12-20 18:01:46] Admin: Test Admin (ID: 23) | Action: toggle_status | Target User ID: 24 | Description: User banned: Test User | IP: unknown
+[2025-12-20 18:11:34] Admin: Test Admin (ID: 10) | Action: add_user | Target User ID: 11 | Description: Added user: New Student (newstudent@test.com) | IP: unknown
+[2025-12-20 18:11:35] Admin: Test Admin (ID: 13) | Action: add_user | Target User ID: 15 | Description: Added user: Another User (duplicate@test.com) | IP: unknown
+[2025-12-20 18:11:35] Admin: Test Admin (ID: 17) | Action: edit_user | Target User ID: 18 | Description: Edited user: Updated Name (updated@test.com) | IP: unknown
+[2025-12-20 18:11:35] Admin: Test Admin (ID: 20) | Action: delete_user | Target User ID: 21 | Description: Deleted user: Test User (6946e6d794e52.delete@test.com) | IP: unknown
+[2025-12-20 18:11:35] Admin: Test Admin (ID: 23) | Action: toggle_status | Target User ID: 24 | Description: User banned: Test User | IP: unknown
+[2025-12-20 18:11:35] Admin: Test Admin (ID: 23) | Action: toggle_status | Target User ID: 24 | Description: User unbanned: Test User | IP: unknown
+[2025-12-20 18:13:17] Admin: Test Admin (ID: 10) | Action: add_user | Target User ID: 11 | Description: Added user: New Student (newstudent@test.com) | IP: unknown
+[2025-12-20 18:13:17] Admin: Test Admin (ID: 16) | Action: edit_user | Target User ID: 17 | Description: Edited user: Updated Name (updated@test.com) | IP: unknown
+[2025-12-20 18:13:17] Admin: Test Admin (ID: 19) | Action: delete_user | Target User ID: 20 | Description: Deleted user: Test User (6946e73dc01aa.delete@test.com) | IP: unknown
+[2025-12-20 18:13:18] Admin: Test Admin (ID: 22) | Action: toggle_status | Target User ID: 23 | Description: User banned: Test User | IP: unknown
+[2025-12-20 18:13:18] Admin: Test Admin (ID: 22) | Action: toggle_status | Target User ID: 23 | Description: User unbanned: Test User | IP: unknown

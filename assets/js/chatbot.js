@@ -105,14 +105,19 @@
         const typingId = showTyping();
         
         // Send to backend
-        fetch('chatbot.php', {
+        fetch('/Plagirism_Detection_System/app/Views/student/chatbot.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({ message: message })
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             removeTyping(typingId);
             
@@ -126,12 +131,22 @@
                     hideSuggestions();
                 }
             } else {
-                addMessage('Sorry, I encountered an error. Please try again.', 'bot');
+                // Show error message, and log details if available
+                let errorMsg = data.message || 'Sorry, I encountered an error. Please try again.';
+                if (data.error) {
+                    console.error('Chatbot error details:', data.error, data.file, data.line);
+                }
+                addMessage(errorMsg, 'bot');
             }
         })
         .catch(error => {
             removeTyping(typingId);
-            addMessage('Connection error. Please check your internet and try again.', 'bot');
+            // Check if it's a network error or server error
+            if (error.message && error.message.includes('Failed to fetch')) {
+                addMessage('Unable to connect to the server. Please check your connection and try again.', 'bot');
+            } else {
+                addMessage('Sorry, I encountered an error. Please try again.', 'bot');
+            }
             console.error('Chatbot error:', error);
         });
     }

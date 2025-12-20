@@ -139,7 +139,17 @@ class UserManagementTest extends DatabaseTestCase
     {
         $_POST['_csrf'] = $_SESSION['_csrf'] = 'test_token';
         
-        $this->createTestUser('duplicate@test.com', 'student');
+        // Create a user directly without unique prefix to test duplicate email
+        $email = 'duplicate@test.com';
+        $stmt = self::$conn->prepare("
+            INSERT INTO users (name, email, password, role, status) 
+            VALUES (?, ?, ?, 'student', 'active')
+        ");
+        $name = 'First User';
+        $password = password_hash('Password123!', PASSWORD_DEFAULT);
+        $stmt->bind_param('sss', $name, $email, $password);
+        $stmt->execute();
+        $stmt->close();
 
         $data = [
             '_csrf' => 'test_token',
