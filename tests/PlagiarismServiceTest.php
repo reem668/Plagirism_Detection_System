@@ -1,8 +1,8 @@
 <?php
 
-use PHPUnit\Framework\TestCase;
-
 require_once __DIR__ . '/../app/Services/PlagiarismService.php';
+
+use PHPUnit\Framework\TestCase;
 
 class PlagiarismServiceTest extends TestCase
 {

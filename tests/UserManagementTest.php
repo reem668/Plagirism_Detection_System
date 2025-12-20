@@ -1,8 +1,9 @@
 <?php
 
-use Controllers\UserController;
-
 require_once __DIR__ . '/DatabaseTestCase.php';
+require_once __DIR__ . '/../app/Controllers/UserController.php';
+
+use Controllers\UserController;
 
 class UserManagementTest extends DatabaseTestCase
 {

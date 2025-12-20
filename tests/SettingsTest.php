@@ -1,8 +1,9 @@
 <?php
 
-use Models\Settings;
-
 require_once __DIR__ . '/DatabaseTestCase.php';
+require_once __DIR__ . '/../app/Models/Settings.php';
+
+use Models\Settings;
 
 class SettingsTest extends DatabaseTestCase
 {

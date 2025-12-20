@@ -1,8 +1,9 @@
 <?php
 
-use Models\Submission;
-
 require_once __DIR__ . '/DatabaseTestCase.php';
+require_once __DIR__ . '/../app/Models/Submission.php';
+
+use Models\Submission;
 
 
 class SubmissionOverviewTest extends DatabaseTestCase

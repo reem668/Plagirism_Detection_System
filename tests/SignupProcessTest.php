@@ -3,6 +3,8 @@
 require_once __DIR__ . '/DatabaseTestCase.php';
 require_once __DIR__ . '/../app/Models/User.php';
 
+use Models\User;
+
 class SignupProcessTest extends DatabaseTestCase
 {
     private User $user;

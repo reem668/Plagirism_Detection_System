@@ -27,8 +27,8 @@ class TestableInstructorController {
             die("DB connection failed: " . $this->conn->connect_error);
         }
         
-        require_once __DIR__ . '/../Models/Instructor.php';
-        require_once __DIR__ . '/../Models/Submission.php';
+        require_once __DIR__ . '/../app/Models/Instructor.php';
+        require_once __DIR__ . '/../app/Models/Submission.php';
         
         $this->instructorModel = new Models\Instructor($this->conn);
         $this->submissionModel = new Models\Submission($this->conn);

@@ -4,6 +4,9 @@ require_once __DIR__ . '/DatabaseTestCase.php';
 require_once __DIR__ . '/../app/Controllers/AuthController.php';
 require_once __DIR__ . '/../app/Models/User.php';
 
+use Models\User;
+use Controllers\AuthController;
+
 class AuthenticationTest extends DatabaseTestCase
 {
     protected function setUp(): void
@@ -30,7 +33,7 @@ class AuthenticationTest extends DatabaseTestCase
 
     public function testLoginWithInvalidEmail(): void
     {
-        $user = new User();
+        $user = new \Models\User(self::$conn);
         $found = $user->findByEmail('nonexistent@test.com');
         
         $this->assertFalse($found);
@@ -38,7 +41,7 @@ class AuthenticationTest extends DatabaseTestCase
 
     public function testLoginWithWrongPassword(): void
     {
-        $user = new User();
+        $user = new \Models\User(self::$conn);
         $user->findByEmail('student@test.com');
         
         $this->assertFalse($user->verifyPassword('WrongPassword'));
@@ -46,7 +49,7 @@ class AuthenticationTest extends DatabaseTestCase
 
     public function testBannedUserCannotLogin(): void
     {
-        $user = new User();
+        $user = new \Models\User(self::$conn);
         $found = $user->findByEmail('banned@test.com');
         
         $this->assertTrue($found);
@@ -55,7 +58,7 @@ class AuthenticationTest extends DatabaseTestCase
 
     public function testAdminLoginRequiresKey(): void
     {
-        $user = new User();
+        $user = new \Models\User(self::$conn);
         $found = $user->findByEmail('admin@test.com');
         
         $this->assertTrue($found);
