@@ -96,7 +96,7 @@ abstract class DatabaseTestCase extends TestCase
               role ENUM('student','instructor','admin') NOT NULL DEFAULT 'student',
               password VARCHAR(255) NOT NULL,
               admin_key VARCHAR(255) DEFAULT NULL,
-              status ENUM('active','pending','accepted','rejected','deleted') DEFAULT 'active',
+              status ENUM('active','pending','accepted','rejected','deleted','banned') DEFAULT 'active',
               created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
               PRIMARY KEY (id),
               UNIQUE KEY email (email)

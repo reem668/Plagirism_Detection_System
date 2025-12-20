@@ -112,7 +112,7 @@ class SubmissionOverviewTest extends DatabaseTestCase
         ]);
 
         $success = $submissionModel->update($submissionId, [
-            'status' => 'completed',
+            'status' => 'accepted',
             'similarity' => 80,
             'exact_match' => 5,
             'partial_match' => 10,
@@ -121,7 +121,7 @@ class SubmissionOverviewTest extends DatabaseTestCase
         $this->assertTrue($success);
 
         $row = $submissionModel->find($submissionId);
-        $this->assertSame('completed', $row['status']);
+        $this->assertSame('accepted', $row['status']);
         $this->assertSame(80, (int) $row['similarity']);
         $this->assertSame(5, (int) $row['exact_match']);
         $this->assertSame(10, (int) $row['partial_match']);
