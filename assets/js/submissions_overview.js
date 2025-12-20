@@ -29,17 +29,22 @@ window.viewSubmissionDetails = function (submissionId) {
   openSubmissionPanel();
   panelBody.innerHTML = '<p>Loading...</p>';
 
-  fetch('ajax/get_submission_details.php?id=' + encodeURIComponent(submissionId))
+  fetch('/Plagirism_Detection_System/ajax/get_submission_details.php?id=' +
+        encodeURIComponent(submissionId))
     .then(function (r) { return r.json(); })
     .then(function (data) {
       if (data.success) {
         panelBody.innerHTML = renderSubmissionDetails(data.submission);
       } else {
-        panelBody.innerHTML = '<p style="color:red">Error: ' + (data.message || 'Failed to load submission') + '</p>';
+        panelBody.innerHTML =
+          '<p style="color:red">Error: ' +
+          (data.message || 'Failed to load submission') +
+          '</p>';
       }
     })
     .catch(function () {
-      panelBody.innerHTML = '<p style="color:red">Error loading submission.</p>';
+      panelBody.innerHTML =
+        '<p style="color:red">Error loading submission.</p>';
     });
 };
 
@@ -60,13 +65,23 @@ function renderSubmissionDetails(s) {
   return (
     '<div style="padding:15px;">' +
       '<h4>Submission #' + s.id + '</h4>' +
-      '<p><strong>Title:</strong> ' + (s.title || s.original_filename || s.stored_name || 'Untitled') + '</p>' +
-      '<p><strong>Student:</strong> ' + (s.student_name || 'Unknown') + '</p>' +
-      '<p><strong>Course ID:</strong> ' + (s.course_id || '—') + '</p>' +
-      '<p><strong>Submitted:</strong> ' + new Date(s.created_at).toLocaleString() + '</p>' +
-      '<p><strong>Similarity:</strong> <span class="similarity-score ' + risk + '">' +
-        (s.similarity != null ? s.similarity + '%' : 'Processing') +
-      '</span></p>' +
+      '<p><strong>Title:</strong> ' +
+        (s.title || s.original_filename || s.stored_name || 'Untitled') +
+      '</p>' +
+      '<p><strong>Student:</strong> ' +
+        (s.student_name || 'Unknown') +
+      '</p>' +
+      '<p><strong>Course ID:</strong> ' +
+        (s.course_id || '—') +
+      '</p>' +
+      '<p><strong>Submitted:</strong> ' +
+        new Date(s.created_at).toLocaleString() +
+      '</p>' +
+      '<p><strong>Similarity:</strong> ' +
+        '<span class="similarity-score ' + risk + '">' +
+          (s.similarity != null ? s.similarity + '%' : 'Processing') +
+        '</span>' +
+      '</p>' +
       '<p><strong>Risk Level:</strong> <strong>' + riskText + '</strong></p>' +
     '</div>'
   );
@@ -83,10 +98,11 @@ window.deleteSubmission = function (id) {
     return;
   }
 
-  fetch('ajax/delete_submission.php', {
+  fetch('/Plagirism_Detection_System/ajax/delete_submission.php', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: 'id=' + encodeURIComponent(id) + '&_csrf=' + encodeURIComponent(csrfToken)
+    body: 'id=' + encodeURIComponent(id) +
+          '&_csrf=' + encodeURIComponent(csrfToken)
   })
     .then(function (r) { return r.json(); })
     .then(function (d) {

@@ -1,7 +1,8 @@
 <?php
 session_start();
-require_once '../includes/db.php';
-require_once '../Controllers/AdminSubmissionController.php';
+
+require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../app/Controllers/AdminSubmissionController.php';
 
 use Controllers\AdminSubmissionController;
 
@@ -19,7 +20,7 @@ if (!$id || !is_numeric($id)) {
 }
 
 $controller = new AdminSubmissionController();
-$submission = $controller->getSubmissionDetails($id);
+$submission = $controller->getSubmissionDetails((int)$id);
 
 if ($submission) {
     echo json_encode(['success' => true, 'submission' => $submission]);

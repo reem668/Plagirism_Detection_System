@@ -2,7 +2,7 @@
 
 use PHPUnit\Framework\TestCase;
 
-require_once __DIR__ . '/../Services/PlagiarismService.php';
+require_once __DIR__ . '/../app/Services/PlagiarismService.php';
 
 class PlagiarismServiceTest extends TestCase
 {

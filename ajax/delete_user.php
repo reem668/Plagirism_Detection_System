@@ -2,12 +2,12 @@
 /**
  * AJAX Endpoint - Delete User
  * Protected: Admin only
-    */
+ */
 
-require_once dirname(__DIR__) . '/includes/db.php';
-require_once dirname(__DIR__) . '/Helpers/SessionManager.php';
-require_once dirname(__DIR__) . '/Middleware/AuthMiddleware.php';
-require_once dirname(__DIR__) . '/Helpers/Csrf.php';
+require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../app/Helpers/SessionManager.php';
+require_once __DIR__ . '/../app/Middleware/AuthMiddleware.php';
+require_once __DIR__ . '/../app/Helpers/Csrf.php';
 
 use Helpers\SessionManager;
 use Middleware\AuthMiddleware;
@@ -17,7 +17,9 @@ header('Content-Type: application/json');
 
 // Authentication check
 $session = SessionManager::getInstance();
-$auth = new AuthMiddleware();
+$auth    = new AuthMiddleware();
+
+// $conn comes from includes/db.php
 
 if (!$session->isLoggedIn() || $session->getUserRole() !== 'admin') {
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
@@ -36,7 +38,7 @@ if (!Csrf::verify($_POST['_csrf'] ?? '')) {
 }
 
 // Get user ID
-$userId = intval($_POST['userId'] ?? 0);
+$userId = (int)($_POST['userId'] ?? 0);
 
 if ($userId <= 0) {
     echo json_encode(['success' => false, 'message' => 'Invalid user ID']);
@@ -44,7 +46,7 @@ if ($userId <= 0) {
 }
 
 // Prevent admin from deleting themselves
-if ($userId == $session->getUserId()) {
+if ($userId === (int)$session->getUserId()) {
     echo json_encode(['success' => false, 'message' => 'You cannot delete yourself']);
     exit;
 }
@@ -54,11 +56,13 @@ $infoStmt = $conn->prepare("SELECT name, email, role FROM users WHERE id = ?");
 $infoStmt->bind_param("i", $userId);
 $infoStmt->execute();
 $result = $infoStmt->get_result();
+
 if ($result->num_rows === 0) {
     $infoStmt->close();
     echo json_encode(['success' => false, 'message' => 'User not found']);
     exit;
 }
+
 $userInfo = $result->fetch_assoc();
 $infoStmt->close();
 
@@ -68,14 +72,23 @@ $stmt->bind_param("i", $userId);
 
 if ($stmt->execute() && $stmt->affected_rows > 0) {
     $stmt->close();
-    
+
     // Log action
-    $logMsg = "[" . date('Y-m-d H:i:s') . "] Admin {$session->getUserName()} deleted user ID {$userId}: {$userInfo['name']} ({$userInfo['email']}) - Role: {$userInfo['role']}\n";
-    @file_put_contents(dirname(__DIR__) . '/storage/logs/admin_actions.log', $logMsg, FILE_APPEND);
-    
+    $logMsg = sprintf(
+        "[%s] Admin %s deleted user ID %d: %s (%s) - Role: %s\n",
+        date('Y-m-d H:i:s'),
+        $session->getUserName(),
+        $userId,
+        $userInfo['name'],
+        $userInfo['email'],
+        $userInfo['role']
+    );
+
+    @file_put_contents(__DIR__ . '/../storage/logs/admin_actions.log', $logMsg, FILE_APPEND);
+
     echo json_encode([
-        'success' => true, 
-        'message' => 'User deleted successfully'
+        'success' => true,
+        'message' => 'User deleted successfully',
     ]);
 } else {
     $stmt->close();

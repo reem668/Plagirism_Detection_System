@@ -2,7 +2,7 @@
 /**
  * Protected Instructor Actions Handler
  * Handles all instructor actions with authentication and authorization
- * 
+ *
  * Security Features:
  * - Requires instructor authentication
  * - Verifies instructor owns the submission
@@ -15,36 +15,41 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-require_once __DIR__ . '/Helpers/SessionManager.php';
-require_once __DIR__ . '/Middleware/AuthMiddleware.php';
-require_once __DIR__ . '/Controllers/InstructorController.php';
-require_once __DIR__ . '/Helpers/Csrf.php';
-require_once __DIR__ . '/Helpers/Validator.php';
-
-use Helpers\SessionManager;
-use Middleware\AuthMiddleware;
-use Helpers\Csrf;
-use Helpers\Validator;
-
-// Initialize authentication
-$session = SessionManager::getInstance();
-$auth = new AuthMiddleware();
-
-// CRITICAL: Require instructor role
-$auth->requireRole('instructor');
-
-// Get current authenticated instructor
-$currentUser = $auth->getCurrentUser();
-$instructor_id = $currentUser['id'];
-
-// Initialize database connection first
+// 1) Initialize database connection FIRST (same as student/dashboard)
 require_once __DIR__ . '/includes/db.php';
 if (!isset($conn) || !$conn) {
     die("Database connection failed. Please check your database configuration.");
 }
 
-// Initialize controller
-$controller = new InstructorController();
+// 2) Load app classes
+require_once __DIR__ . '/app/Core/autoload.php';
+require_once __DIR__ . '/app/Helpers/SessionManager.php';
+require_once __DIR__ . '/app/Middleware/AuthMiddleware.php';
+require_once __DIR__ . '/app/Controllers/InstructorController.php';
+require_once __DIR__ . '/app/Helpers/Csrf.php';
+require_once __DIR__ . '/app/Helpers/Validator.php';
+require_once __DIR__ . '/app/Models/Instructor.php';
+
+use Helpers\SessionManager;
+use Middleware\AuthMiddleware;
+use Helpers\Csrf;
+use Helpers\Validator;
+use Controllers\InstructorController;
+use Models\Instructor;
+
+// Initialize authentication
+$session = SessionManager::getInstance();
+$auth    = new AuthMiddleware();
+
+// Require instructor role
+$auth->requireRole('instructor');
+
+// Get current authenticated instructor
+$currentUser   = $auth->getCurrentUser();
+$instructor_id = $currentUser['id'];
+
+// Initialize controller with existing connection
+$controller = new InstructorController($conn);
 
 // Get action from request
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
@@ -58,17 +63,18 @@ if (empty($action)) {
 // Log all instructor actions for audit trail
 function logInstructorAction($instructor_id, $action, $submission_id, $success) {
     $logFile = __DIR__ . '/storage/logs/instructor_actions.log';
-    $logDir = dirname($logFile);
-    
+    $logDir  = dirname($logFile);
+
     if (!file_exists($logDir)) {
         mkdir($logDir, 0755, true);
     }
-    
+
     $timestamp = date('Y-m-d H:i:s');
-    $status = $success ? 'SUCCESS' : 'FAILED';
-    $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    $status    = $success ? 'SUCCESS' : 'FAILED';
+    $ip        = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+
     $logEntry = "[{$timestamp}] {$status} - Instructor ID: {$instructor_id}, Action: {$action}, Submission ID: {$submission_id}, IP: {$ip}\n";
-    
+
     file_put_contents($logFile, $logEntry, FILE_APPEND);
 }
 
@@ -77,25 +83,23 @@ function logInstructorAction($instructor_id, $action, $submission_id, $success) 
 // ============================================================
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $submission_id = (int)($_GET['id'] ?? 0);
-    
+
     // Validate submission ID
     if ($submission_id <= 0) {
         logInstructorAction($instructor_id, $action, $submission_id, false);
         header("Location: /Plagirism_Detection_System/Instructordashboard.php?error=" . urlencode('Invalid submission ID'));
         exit;
     }
-    
+
     // Verify instructor owns this submission
-    // Connection already initialized at top of file
-    require_once __DIR__ . '/Models/Instructor.php';
-    $instructorModel = new Models\Instructor($conn);
-    
+    $instructorModel = new Instructor($conn);
+
     if (!$instructorModel->ownsSubmission($instructor_id, $submission_id)) {
         logInstructorAction($instructor_id, $action, $submission_id, false);
         http_response_code(403);
         die('⛔ Access denied. You can only access submissions assigned to you.');
     }
-    
+
     switch ($action) {
         case 'view_report':
             try {
@@ -130,7 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 // Handle POST requests (modify actions)
 // ============================================================
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // CRITICAL: Verify CSRF token for all POST requests
+    // Verify CSRF token for all POST requests
     if (!Csrf::verify($_POST['_csrf'] ?? '')) {
         logInstructorAction($instructor_id, $action, 0, false);
         header("Location: /Plagirism_Detection_System/Instructordashboard.php?error=" . urlencode('Security token validation failed. Please try again.'));
@@ -139,7 +143,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Get and validate submission ID
     $submission_id = (int)($_POST['submission_id'] ?? 0);
-    
+
     if ($submission_id <= 0) {
         logInstructorAction($instructor_id, $action, $submission_id, false);
         header("Location: /Plagirism_Detection_System/Instructordashboard.php?error=" . urlencode('Invalid submission ID'));
@@ -147,10 +151,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // Verify instructor owns this submission
-    // Connection already initialized at top of file
-    require_once __DIR__ . '/Models/Instructor.php';
-    $instructorModel = new Models\Instructor($conn);
-    
+    $instructorModel = new Instructor($conn);
+
     if (!$instructorModel->ownsSubmission($instructor_id, $submission_id)) {
         logInstructorAction($instructor_id, $action, $submission_id, false);
         http_response_code(403);
@@ -181,18 +183,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             break;
 
         case 'add_feedback':
-            // Validate feedback input
             $feedback = $_POST['feedback'] ?? '';
-            
+
             if (empty(trim($feedback))) {
                 $message = 'Feedback cannot be empty.';
                 $success = false;
                 logInstructorAction($instructor_id, $action, $submission_id, false);
             } else {
-                // Sanitize feedback
                 $feedback = Validator::sanitize($feedback);
-                
-                // Validate length (max 5000 characters)
+
                 if (strlen($feedback) > 5000) {
                     $message = 'Feedback is too long. Maximum 5000 characters allowed.';
                     $success = false;
@@ -213,20 +212,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         default:
             $message = 'Invalid action specified.';
-            $success = false;
+            $success  = false;
             logInstructorAction($instructor_id, $action, $submission_id, false);
             break;
     }
 
     // Redirect with appropriate message
-    $status = $success ? 'success' : 'error';
+    $status      = $success ? 'success' : 'error';
     $redirectUrl = "/Plagirism_Detection_System/Instructordashboard.php?{$status}=" . urlencode($message);
-    
-    // Preserve view parameter if it exists
+
     if (isset($_POST['current_view'])) {
         $redirectUrl .= "&view=" . urlencode($_POST['current_view']);
     }
-    
+
     header("Location: {$redirectUrl}");
     exit;
 }
@@ -235,4 +233,3 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 logInstructorAction($instructor_id, $action, 0, false);
 header("Location: /Plagirism_Detection_System/Instructordashboard.php?error=" . urlencode('Invalid request method'));
 exit;
-?>

@@ -4,9 +4,9 @@
  * Protected: Admin only
  */
 
-require_once dirname(__DIR__) . '/includes/db.php';
-require_once dirname(__DIR__) . '/Helpers/SessionManager.php';
-require_once dirname(__DIR__) . '/Middleware/AuthMiddleware.php';
+require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../app/Helpers/SessionManager.php';
+require_once __DIR__ . '/../app/Middleware/AuthMiddleware.php';
 
 use Helpers\SessionManager;
 use Middleware\AuthMiddleware;
@@ -15,7 +15,9 @@ header('Content-Type: application/json');
 
 // Authentication check
 $session = SessionManager::getInstance();
-$auth = new AuthMiddleware();
+$auth    = new AuthMiddleware();
+
+// $conn comes from includes/db.php
 
 if (!$session->isLoggedIn() || $session->getUserRole() !== 'admin') {
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
@@ -23,55 +25,66 @@ if (!$session->isLoggedIn() || $session->getUserRole() !== 'admin') {
 }
 
 // Get parameters
-$search = trim($_GET['search'] ?? '');
-$role = trim($_GET['role'] ?? '');
-$page = max(1, intval($_GET['page'] ?? 1));
+$search  = trim($_GET['search'] ?? '');
+$role    = trim($_GET['role'] ?? '');
+$page    = max(1, (int)($_GET['page'] ?? 1));
 $perPage = 10;
-$offset = ($page - 1) * $perPage;
+$offset  = ($page - 1) * $perPage;
 
 // Build query
-$sql = "SELECT id, name, email, role, status, created_at FROM users WHERE 1=1";
+$sql    = "SELECT id, name, email, role, status, created_at FROM users WHERE 1=1";
 $params = [];
-$types = "";
+$types  = "";
 
 // Search filter
-if (!empty($search)) {
-    $sql .= " AND (name LIKE ? OR email LIKE ?)";
-    $searchTerm = "%{$search}%";
-    $params[] = $searchTerm;
-    $params[] = $searchTerm;
-    $types .= "ss";
+if ($search !== '') {
+    $sql        .= " AND (name LIKE ? OR email LIKE ?)";
+    $searchTerm  = "%{$search}%";
+    $params[]    = $searchTerm;
+    $params[]    = $searchTerm;
+    $types      .= "ss";
 }
 
 // Role filter
-if (!empty($role) && $role !== 'all') {
-    $sql .= " AND role = ?";
+if ($role !== '' && $role !== 'all') {
+    $sql     .= " AND role = ?";
     $params[] = $role;
-    $types .= "s";
+    $types   .= "s";
 }
 
 // Get total count for pagination
-$countSql = "SELECT COUNT(*) as total FROM users WHERE 1=1";
-if (!empty($search)) {
-    $countSql .= " AND (name LIKE ? OR email LIKE ?)";
+$countSql = "SELECT COUNT(*) AS total FROM users WHERE 1=1";
+$countParams = [];
+$countTypes  = "";
+
+// reuse same filters for count
+if ($search !== '') {
+    $countSql    .= " AND (name LIKE ? OR email LIKE ?)";
+    $searchTerm   = "%{$search}%";
+    $countParams[] = $searchTerm;
+    $countParams[] = $searchTerm;
+    $countTypes   .= "ss";
 }
-if (!empty($role) && $role !== 'all') {
-    $countSql .= " AND role = ?";
+
+if ($role !== '' && $role !== 'all') {
+    $countSql     .= " AND role = ?";
+    $countParams[] = $role;
+    $countTypes   .= "s";
 }
 
 $countStmt = $conn->prepare($countSql);
-if (!empty($params)) {
-    $countStmt->bind_param($types, ...$params);
+if (!empty($countParams)) {
+    $countStmt->bind_param($countTypes, ...$countParams);
 }
 $countStmt->execute();
-$totalUsers = $countStmt->get_result()->fetch_assoc()['total'];
+$totalUsers = $countStmt->get_result()->fetch_assoc()['total'] ?? 0;
 $countStmt->close();
 
 // Get users with pagination
-$sql .= " ORDER BY created_at DESC LIMIT ? OFFSET ?";
+$sql     .= " ORDER BY created_at DESC LIMIT ? OFFSET ?";
 $params[] = $perPage;
 $params[] = $offset;
-$types .= "ii";
+$types   .= "ii";
 
 $stmt = $conn->prepare($sql);
 if (!empty($params)) {
@@ -87,15 +100,15 @@ while ($row = $result->fetch_assoc()) {
 $stmt->close();
 
 // Calculate pagination info
-$totalPages = ceil($totalUsers / $perPage);
+$totalPages = $perPage > 0 ? (int)ceil($totalUsers / $perPage) : 0;
 
 echo json_encode([
-    'success' => true,
-    'users' => $users,
+    'success'    => true,
+    'users'      => $users,
     'pagination' => [
         'currentPage' => $page,
-        'totalPages' => $totalPages,
-        'totalUsers' => $totalUsers,
-        'perPage' => $perPage
-    ]
+        'totalPages'  => $totalPages,
+        'totalUsers'  => $totalUsers,
+        'perPage'     => $perPage,
+    ],
 ]);

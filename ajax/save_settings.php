@@ -1,8 +1,9 @@
 <?php
 session_start();
-require_once dirname(__DIR__) . '/includes/db.php';
-require_once dirname(__DIR__) . '/Helpers/Csrf.php';
-require_once dirname(__DIR__) . '/Models/Settings.php';
+
+require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../app/Helpers/Csrf.php';
+require_once __DIR__ . '/../app/Models/Settings.php';
 
 use Helpers\Csrf;
 use Models\Settings;
@@ -24,9 +25,9 @@ if (!Csrf::verify($_POST['_csrf'] ?? '')) {
     exit;
 }
 
-$maxUpload = intval($_POST['maxUploadSize'] ?? 10);
-$threshold = intval($_POST['plagiarismThreshold'] ?? 50);
-$quota = intval($_POST['submissionQuota'] ?? 20);
+$maxUpload = (int)($_POST['maxUploadSize'] ?? 10);
+$threshold = (int)($_POST['plagiarismThreshold'] ?? 50);
+$quota     = (int)($_POST['submissionQuota'] ?? 20);
 
 // Validation
 if ($threshold < 10 || $threshold > 90) {
@@ -45,10 +46,10 @@ if ($quota < 5 || $quota > 100) {
 }
 
 $settingsModel = new Settings($conn);
-$success = $settingsModel->updateMultiple([
-    'max_upload_size' => $maxUpload,
-    'plagiarism_threshold' => $threshold,
-    'submission_quota' => $quota
+$success       = $settingsModel->updateMultiple([
+    'max_upload_size'       => $maxUpload,
+    'plagiarism_threshold'  => $threshold,
+    'submission_quota'      => $quota,
 ]);
 
 if ($success) {
@@ -56,5 +57,3 @@ if ($success) {
 } else {
     echo json_encode(['success' => false, 'message' => 'Failed to save settings']);
 }
-
-

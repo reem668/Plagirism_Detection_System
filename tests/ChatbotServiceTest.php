@@ -1,7 +1,7 @@
 <?php
 
 require_once __DIR__ . '/bootstrap.php';
-require_once __DIR__ . '/../Services/ChatbotService.php';
+require_once __DIR__ . '/../app/Services/ChatbotService.php';
 require_once __DIR__ . '/DatabaseTestCase.php';
 
 class ChatbotServiceTest extends DatabaseTestCase

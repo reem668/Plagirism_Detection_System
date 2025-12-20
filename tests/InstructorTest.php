@@ -1,7 +1,7 @@
 <?php
 
 require_once __DIR__ . '/DatabaseTestCase.php';
-require_once __DIR__ . '/../Models/Instructor.php';
+require_once __DIR__ . '/../app/Models/Instructor.php';
 
 use PHPUnit\Framework\TestCase;
 use Models\Instructor;

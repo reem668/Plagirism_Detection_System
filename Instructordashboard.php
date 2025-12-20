@@ -2,68 +2,68 @@
 /**
  * Protected Instructor Dashboard - Main Entry Point
  * Only accessible by authenticated instructors
- * 
- * This is the main entry point for all instructor pages
- * All instructor views are protected and can only be accessed through this file
  */
 
-require_once __DIR__ . '/Helpers/SessionManager.php';
-require_once __DIR__ . '/Middleware/AuthMiddleware.php';
-require_once __DIR__ . '/Controllers/InstructorController.php';
+// 1) Load DB connection FIRST (defines $conn)
+require_once __DIR__ . '/includes/db.php';
+
+// 2) Load autoloader and middleware
+require_once __DIR__ . '/app/Core/autoload.php';
+require_once __DIR__ . '/app/Helpers/SessionManager.php';
+require_once __DIR__ . '/app/Middleware/AuthMiddleware.php';
 
 use Helpers\SessionManager;
 use Middleware\AuthMiddleware;
+use Controllers\InstructorController;
+use Helpers\Csrf;
 
 // Initialize authentication
 $session = SessionManager::getInstance();
-$auth = new AuthMiddleware();
+$auth    = new AuthMiddleware();
 
-// CRITICAL: Require instructor role - this blocks unauthorized access
+// Require instructor role
 $auth->requireRole('instructor');
 
-// Define security constant - this prevents direct access to view files
+// Security constant
 define('INSTRUCTOR_ACCESS', true);
 
-// If we reach here, user is authenticated as instructor
-$currentUser = $auth->getCurrentUser();
+// Authenticated instructor
+$currentUser   = $auth->getCurrentUser();
 $instructor_id = $currentUser['id'];
 
-// Initialize the instructor controller
-$controller = new InstructorController();
+// 3) $conn now exists, pass into controller
+$controller = new InstructorController($conn);
 
-// Get the current view (submissions or trash)
+// Get the current view
 $current_view = $_GET['view'] ?? 'submissions';
 
-// Validate view parameter - additional security layer
+// Validate view parameter
 $allowed_views = ['submissions', 'trash'];
-if (!in_array($current_view, $allowed_views)) {
+if (!in_array($current_view, $allowed_views, true)) {
     $current_view = 'submissions';
 }
 
 // Fetch instructor data
 $instructor = $controller->getInstructor($instructor_id);
 if (!$instructor) {
-    // Instructor not found in database - possible data integrity issue
     $session->destroy();
     header("Location: /Plagirism_Detection_System/signup.php?error=instructor_not_found");
     exit;
 }
 
 // Fetch dashboard data
-$stats = $controller->getStats($instructor_id);
+$stats             = $controller->getStats($instructor_id);
 $enrolled_students = $controller->getEnrolledStudents($instructor_id);
- $submissions = $controller->getSubmissions($instructor_id);
- $trash = $controller->getTrash($instructor_id);
+$submissions       = $controller->getSubmissions($instructor_id);
+$trash             = $controller->getTrash($instructor_id);
 
-// Generate CSRF token for forms
-require_once __DIR__ . '/Helpers/Csrf.php';
-use Helpers\Csrf;
+// CSRF
+require_once __DIR__ . '/app/Helpers/Csrf.php';
 $csrf_token = Csrf::token();
 
-// Get success/error messages from query string
+// Messages
 $success_msg = $_GET['success'] ?? '';
-$error_msg = $_GET['error'] ?? '';
+$error_msg   = $_GET['error'] ?? '';
 
-// Include the protected view
-require __DIR__ . '/Views/instructor/Instructor.php';
-?>
+// View
+require __DIR__ . '/app/Views/instructor/Instructor.php';

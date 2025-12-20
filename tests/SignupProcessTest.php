@@ -1,7 +1,7 @@
 <?php
 
 require_once __DIR__ . '/DatabaseTestCase.php';
-require_once __DIR__ . '/../Models/User.php';
+require_once __DIR__ . '/../app/Models/User.php';
 
 class SignupProcessTest extends DatabaseTestCase
 {

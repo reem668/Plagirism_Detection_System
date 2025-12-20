@@ -4,7 +4,7 @@ use PHPUnit\Framework\TestCase;
 use Controllers\SubmissionController;
 use Models\Submission;
 
-require_once __DIR__ . '/../Controllers/SubmissionController.php';
+require_once __DIR__ . '/../app/Controllers/SubmissionController.php';
 
 class SubmissionControllerTest extends TestCase
 {

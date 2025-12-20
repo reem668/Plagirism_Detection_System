@@ -4,11 +4,11 @@
  * Protected: Admin only
  */
 
-require_once dirname(__DIR__) . '/includes/db.php';
-require_once dirname(__DIR__) . '/Helpers/SessionManager.php';
-require_once dirname(__DIR__) . '/Middleware/AuthMiddleware.php';
-require_once dirname(__DIR__) . '/Helpers/Csrf.php';
-require_once dirname(__DIR__) . '/Helpers/Validator.php';
+require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../app/Helpers/SessionManager.php';
+require_once __DIR__ . '/../app/Middleware/AuthMiddleware.php';
+require_once __DIR__ . '/../app/Helpers/Csrf.php';
+require_once __DIR__ . '/../app/Helpers/Validator.php';
 
 use Helpers\SessionManager;
 use Middleware\AuthMiddleware;
@@ -19,7 +19,9 @@ header('Content-Type: application/json');
 
 // Authentication check
 $session = SessionManager::getInstance();
-$auth = new AuthMiddleware();
+$auth    = new AuthMiddleware();
+
+// $conn from includes/db.php
 
 if (!$session->isLoggedIn() || $session->getUserRole() !== 'admin') {
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
@@ -38,11 +40,11 @@ if (!Csrf::verify($_POST['_csrf'] ?? '')) {
 }
 
 // Get and validate input
-$userId = intval($_POST['userId'] ?? 0);
-$name = Validator::sanitize($_POST['name'] ?? '');
-$email = Validator::sanitize($_POST['email'] ?? '');
-$role = Validator::sanitize($_POST['role'] ?? '');
-$status = Validator::sanitize($_POST['status'] ?? '');
+$userId   = (int)($_POST['userId'] ?? 0);
+$name     = Validator::sanitize($_POST['name'] ?? '');
+$email    = Validator::sanitize($_POST['email'] ?? '');
+$role     = Validator::sanitize($_POST['role'] ?? '');
+$status   = Validator::sanitize($_POST['status'] ?? '');
 $adminKey = isset($_POST['admin_key']) ? Validator::sanitize($_POST['admin_key']) : null;
 
 // Validation
@@ -61,14 +63,27 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 }
 
 $allowedRoles = ['student', 'instructor', 'admin'];
-if (!in_array($role, $allowedRoles)) {
+if (!in_array($role, $allowedRoles, true)) {
     $errors[] = 'Invalid role';
 }
 
 $allowedStatuses = ['active', 'banned'];
-if (!in_array($status, $allowedStatuses)) {
+if (!in_array($status, $allowedStatuses, true)) {
     $errors[] = 'Invalid status';
 }
+
+// First, load existing user so we know old role, for later checks
+$checkStmt = $conn->prepare("SELECT name, role FROM users WHERE id = ?");
+$checkStmt->bind_param("i", $userId);
+$checkStmt->execute();
+$result = $checkStmt->get_result();
+if ($result->num_rows === 0) {
+    $checkStmt->close();
+    echo json_encode(['success' => false, 'message' => 'User not found']);
+    exit;
+}
+$oldData = $result->fetch_assoc();
+$checkStmt->close();
 
 // Validate admin key if role is admin and key is provided
 if ($role === 'admin' && !empty($adminKey)) {
@@ -87,19 +102,6 @@ if (!empty($errors)) {
     exit;
 }
 
-// Check if user exists
-$checkStmt = $conn->prepare("SELECT name, role FROM users WHERE id = ?");
-$checkStmt->bind_param("i", $userId);
-$checkStmt->execute();
-$result = $checkStmt->get_result();
-if ($result->num_rows === 0) {
-    $checkStmt->close();
-    echo json_encode(['success' => false, 'message' => 'User not found']);
-    exit;
-}
-$oldData = $result->fetch_assoc();
-$checkStmt->close();
-
 // Check if email is taken by another user
 $emailCheckStmt = $conn->prepare("SELECT id FROM users WHERE email = ? AND id != ?");
 $emailCheckStmt->bind_param("si", $email, $userId);
@@ -112,49 +114,63 @@ if ($emailCheckStmt->get_result()->num_rows > 0) {
 $emailCheckStmt->close();
 
 // Prevent admin from demoting themselves
-if ($userId == $session->getUserId() && $role !== 'admin') {
+if ($userId === (int)$session->getUserId() && $role !== 'admin') {
     echo json_encode(['success' => false, 'message' => 'You cannot change your own role']);
     exit;
 }
 
 // Prevent admin from banning themselves
-if ($userId == $session->getUserId() && $status === 'banned') {
+if ($userId === (int)$session->getUserId() && $status === 'banned') {
     echo json_encode(['success' => false, 'message' => 'You cannot ban yourself']);
     exit;
 }
 
 // Update user - include admin key if role is admin and key is provided
 if ($role === 'admin' && !empty($adminKey)) {
-    $stmt = $conn->prepare("UPDATE users SET name = ?, email = ?, role = ?, status = ?, admin_key = ? WHERE id = ?");
+    $stmt = $conn->prepare("
+        UPDATE users
+        SET name = ?, email = ?, role = ?, status = ?, admin_key = ?
+        WHERE id = ?
+    ");
     $stmt->bind_param("sssssi", $name, $email, $role, $status, $adminKey, $userId);
-} else if ($role === 'admin' && empty($adminKey)) {
+} elseif ($role === 'admin' && empty($adminKey)) {
     // Keep existing admin key
-    $stmt = $conn->prepare("UPDATE users SET name = ?, email = ?, role = ?, status = ? WHERE id = ?");
+    $stmt = $conn->prepare("
+        UPDATE users
+        SET name = ?, email = ?, role = ?, status = ?
+        WHERE id = ?
+    ");
     $stmt->bind_param("ssssi", $name, $email, $role, $status, $userId);
 } else {
     // Not admin role - clear admin key if it exists
     $nullKey = null;
-    $stmt = $conn->prepare("UPDATE users SET name = ?, email = ?, role = ?, status = ?, admin_key = ? WHERE id = ?");
+    $stmt = $conn->prepare("
+        UPDATE users
+        SET name = ?, email = ?, role = ?, status = ?, admin_key = ?
+        WHERE id = ?
+    ");
     $stmt->bind_param("sssssi", $name, $email, $role, $status, $nullKey, $userId);
 }
 
 if ($stmt->execute()) {
     $stmt->close();
-    
+
     // Log action
     $logMsg = "[" . date('Y-m-d H:i:s') . "] Admin {$session->getUserName()} updated user ID {$userId}: {$oldData['name']} -> {$name}, role: {$role}, status: {$status}";
     if ($role === 'admin' && !empty($adminKey)) {
         $logMsg .= " (admin key updated)";
     }
     $logMsg .= "\n";
-    @file_put_contents(dirname(__DIR__) . '/storage/logs/admin_actions.log', $logMsg, FILE_APPEND);
-    
+
+    @file_put_contents(__DIR__ . '/../storage/logs/admin_actions.log', $logMsg, FILE_APPEND);
+
     echo json_encode([
-        'success' => true, 
-        'message' => 'User updated successfully'
+        'success' => true,
+        'message' => 'User updated successfully',
     ]);
 } else {
+    $error = $stmt->error;
     $stmt->close();
-    error_log("Edit user failed: " . $stmt->error);
+    error_log("Edit user failed: " . $error);
     echo json_encode(['success' => false, 'message' => 'Failed to update user']);
 }

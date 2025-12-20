@@ -1,6 +1,7 @@
 <?php
 session_start();
-require_once '../includes/db.php';
+
+require_once __DIR__ . '/../includes/db.php';
 
 if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
     die('Access denied');
@@ -15,13 +16,16 @@ $stmt = $conn->prepare("SELECT original_filename, file_path FROM submissions WHE
 $stmt->bind_param("i", $id);
 $stmt->execute();
 $stmt->bind_result($original_filename, $file_path);
+
 if ($stmt->fetch() && $file_path && file_exists($file_path)) {
+    $stmt->close();
+
     header('Content-Type: application/octet-stream');
     header('Content-Disposition: attachment; filename="' . $original_filename . '"');
     header('Content-Length: ' . filesize($file_path));
     readfile($file_path);
     exit;
 } else {
+    $stmt->close();
     die('File not found or not available');
 }
-$stmt->close();

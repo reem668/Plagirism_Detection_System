@@ -4,11 +4,12 @@
  * Protected: Admin only
  */
 
-require_once dirname(__DIR__) . '/includes/db.php';
-require_once dirname(__DIR__) . '/Helpers/SessionManager.php';
-require_once dirname(__DIR__) . '/Middleware/AuthMiddleware.php';
-require_once dirname(__DIR__) . '/Helpers/Csrf.php';
-require_once dirname(__DIR__) . '/Helpers/Validator.php';
+// ajax/ + /..  => project root
+require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../app/Helpers/SessionManager.php';
+require_once __DIR__ . '/../app/Middleware/AuthMiddleware.php';
+require_once __DIR__ . '/../app/Helpers/Csrf.php';
+require_once __DIR__ . '/../app/Helpers/Validator.php';
 
 use Helpers\SessionManager;
 use Middleware\AuthMiddleware;
@@ -19,7 +20,9 @@ header('Content-Type: application/json');
 
 // Authentication check
 $session = SessionManager::getInstance();
-$auth = new AuthMiddleware();
+$auth    = new AuthMiddleware();
+
+// db.php must define $conn here
 
 if (!$session->isLoggedIn() || $session->getUserRole() !== 'admin') {
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
@@ -38,11 +41,12 @@ if (!Csrf::verify($_POST['_csrf'] ?? '')) {
 }
 
 // Get and validate input
-$name = Validator::sanitize($_POST['name'] ?? '');
-$email = Validator::sanitize($_POST['email'] ?? '');
-$role = Validator::sanitize($_POST['role'] ?? '');
+$name     = Validator::sanitize($_POST['name'] ?? '');
+$email    = Validator::sanitize($_POST['email'] ?? '');
+$role     = Validator::sanitize($_POST['role'] ?? '');
 $password = $_POST['password'] ?? '';
 $adminKey = isset($_POST['admin_key']) ? Validator::sanitize($_POST['admin_key']) : null;
+
 // Validation
 $errors = [];
 
@@ -55,7 +59,7 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 }
 
 $allowedRoles = ['student', 'instructor', 'admin'];
-if (!in_array($role, $allowedRoles)) {
+if (!in_array($role, $allowedRoles, true)) {
     $errors[] = 'Invalid role';
 }
 
@@ -66,6 +70,7 @@ if (strlen($password) < 8) {
 if (!preg_match("/^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*\/])[A-Za-z\d!@#$%^&*\/]{8,}$/", $password)) {
     $errors[] = 'Password must contain uppercase, number, and special character';
 }
+
 if ($role === 'admin') {
     if (empty($adminKey)) {
         $errors[] = 'Admin secret key is required for admin role';
@@ -83,6 +88,7 @@ if (!empty($errors)) {
 $checkStmt = $conn->prepare("SELECT id FROM users WHERE email = ?");
 $checkStmt->bind_param("s", $email);
 $checkStmt->execute();
+
 if ($checkStmt->get_result()->num_rows > 0) {
     $checkStmt->close();
     echo json_encode(['success' => false, 'message' => 'Email already exists']);
@@ -95,30 +101,36 @@ $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
 // Insert user
 if ($role === 'admin') {
-    $stmt = $conn->prepare("INSERT INTO users (name, email, password, role, admin_key, status, created_at) VALUES (?, ?, ?, ?, ?, 'active', NOW())");
+    $stmt = $conn->prepare("
+        INSERT INTO users (name, email, password, role, admin_key, status, created_at)
+        VALUES (?, ?, ?, ?, ?, 'active', NOW())
+    ");
     $stmt->bind_param("sssss", $name, $email, $hashedPassword, $role, $adminKey);
 } else {
-    $stmt = $conn->prepare("INSERT INTO users (name, email, password, role, status, created_at) VALUES (?, ?, ?, ?, 'active', NOW())");
+    $stmt = $conn->prepare("
+        INSERT INTO users (name, email, password, role, status, created_at)
+        VALUES (?, ?, ?, ?, 'active', NOW())
+    ");
     $stmt->bind_param("ssss", $name, $email, $hashedPassword, $role);
 }
 
 if ($stmt->execute()) {
     $newUserId = $stmt->insert_id;
     $stmt->close();
-    
-    // Log action
+
     // Log action
     $logMsg = "[" . date('Y-m-d H:i:s') . "] Admin {$session->getUserName()} added user: {$name} ({$email}) as {$role}";
     if ($role === 'admin') {
         $logMsg .= " with admin key";
     }
     $logMsg .= "\n";
-    @file_put_contents(dirname(__DIR__) . '/storage/logs/admin_actions.log', $logMsg, FILE_APPEND);
-    
+
+    @file_put_contents(__DIR__ . '/../storage/logs/admin_actions.log', $logMsg, FILE_APPEND);
+
     echo json_encode([
-        'success' => true, 
+        'success' => true,
         'message' => 'User added successfully',
-        'userId' => $newUserId
+        'userId'  => $newUserId,
     ]);
 } else {
     $stmt->close();

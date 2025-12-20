@@ -1,6 +1,6 @@
 <?php
 
-require_once __DIR__ . '/../Helpers/Validator.php';
+require_once __DIR__ . '/../app/Helpers/Validator.php';
 
 use PHPUnit\Framework\TestCase;
 use Helpers\Validator;

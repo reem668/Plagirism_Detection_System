@@ -1,8 +1,9 @@
 <?php
 session_start();
-require_once dirname(__DIR__) . '/includes/db.php';
-require_once dirname(__DIR__) . '/Helpers/Csrf.php';
-require_once dirname(__DIR__) . '/Models/Settings.php';
+
+require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../app/Helpers/Csrf.php';
+require_once __DIR__ . '/../app/Models/Settings.php';
 
 use Helpers\Csrf;
 use Models\Settings;
@@ -25,12 +26,10 @@ if (!Csrf::verify($_POST['_csrf'] ?? '')) {
 }
 
 $settingsModel = new Settings($conn);
-$success = $settingsModel->reset();
+$success       = $settingsModel->reset();
 
 if ($success) {
     echo json_encode(['success' => true, 'message' => 'Settings reset to defaults']);
 } else {
     echo json_encode(['success' => false, 'message' => 'Failed to reset settings']);
 }
-
-

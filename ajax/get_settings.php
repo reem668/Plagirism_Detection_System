@@ -1,7 +1,8 @@
 <?php
 session_start();
-require_once dirname(__DIR__) . '/includes/db.php';
-require_once dirname(__DIR__) . '/Models/Settings.php';
+
+require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../app/Models/Settings.php';
 
 use Models\Settings;
 
@@ -13,15 +14,13 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
 }
 
 $settingsModel = new Settings($conn);
-$settings = $settingsModel->getAll();
+$settings      = $settingsModel->getAll();
 
 echo json_encode([
-    'success' => true,
+    'success'  => true,
     'settings' => [
-        'maxUploadSize' => $settings['max_upload_size'] ?? 10,
-        'plagiarismThreshold' => $settings['plagiarism_threshold'] ?? 50,
-        'submissionQuota' => $settings['submission_quota'] ?? 20
-    ]
+        'maxUploadSize'        => $settings['max_upload_size'] ?? 10,
+        'plagiarismThreshold'  => $settings['plagiarism_threshold'] ?? 50,
+        'submissionQuota'      => $settings['submission_quota'] ?? 20,
+    ],
 ]);
-
-

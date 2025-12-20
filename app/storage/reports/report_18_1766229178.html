@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='UTF-8'>
+<title>Submission Report #18</title>
+<style>
+body{font-family:Arial,sans-serif;padding:20px;}
+mark{background:yellow;}
+.summary{margin-top:20px;}
+</style>
+</head>
+<body>
+<h1>Report for Submission #18</h1>
+<div class='summary'>
+<p><strong>Plagiarised:</strong> 0%</p>
+<p><strong>Exact Match:</strong> 0%</p>
+<p><strong>Partial Match:</strong> 0%</p>
+</div>
+<h2>Text with highlighted matches</h2>
+<p> -4551373114993TEXT RECOGNITION IN IMAGES AND CONVERTING RECOGNIZED TEXT TO SPEECH-4551373114993Image Processing ProjectText recognition in images and converting recognized text to speechInstalling DependenciesThis prepares Google Colab with all the required tools:Kagglehub -&gt; Used to download datasets directly from Kaggle.Pytesseract -&gt; Python wrapper for Tesseract OCR engine which extracts text from imagesGtts (Google Text-to-Speech) -&gt; Converts extracted text into spoken audioPlaysound -&gt; Plays generated speechTesseract-ocr -&gt;The actual OCR engine required by pytesseractImporting Required Librariesos -&gt; File and directory handlingcv2 -&gt; Image reading and preprocessingmatplotlib -&gt; For displaying imagespytesseract -&gt; Extracts text from processed imageskagglehub -&gt; Download Kaggle datasetsgTTS -&gt; Convert text output into speechAudio &amp; display -&gt; Play audio from within Jupyter NotebookDownloading the Dataset from KaggleThis function returns the local path where the dataset is storedSelecting Sample Images-Navigates to the “Email” folder inside the dataset-Selects the first 4 images for testing-Stores full path in a listOCR Function12001502117090Read Image Loads the scanned image from disk1844039205740Convert to Grayscale              Simplifies the image and improves OCR accuracyResize Image Enlarges text so Tesseract can recognize characters more easilyThresholdingConverts image to pure black &amp; white to reduce noiseOCR Extraction Extracts readable text from the processed image990600149225Output Return original image and extracted textText-to-Speech FunctionChecks if text is emptyUses Google Text-to-Speech to convert text into spoken English audioSaves the audio as an MP3 filePlays it directly in the notebookMain FunctionFor each scanned image:Runs OCR to extract text (Calls ocr_image function)Displays the imagePrints extracted text Converts the text into speech (Calls speak function)</p>
+</body>
+</html>

@@ -37,7 +37,7 @@ $baseUrl = '/Plagirism_Detection_System';
   </nav>
   
   <div class="logout-section">
-    <a href="<?= $baseUrl ?>/logout.php" class="logout-btn">
+    <a href="<?= $baseUrl ?>/app/logout.php" class="logout-btn">
       <i class="fas fa-sign-out-alt"></i>
     </a>
   </div>

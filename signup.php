@@ -4,8 +4,11 @@
  * Redirects to dashboard if already logged in
  */
 
-require_once __DIR__ . '/Helpers/SessionManager.php';
-require_once __DIR__ . '/Middleware/AuthMiddleware.php';
+
+require_once __DIR__ . '/app/Helpers/SessionManager.php';
+require_once __DIR__ . '/app/Middleware/AuthMiddleware.php';
+
+
 
 use Helpers\SessionManager;
 use Middleware\AuthMiddleware;
@@ -26,7 +29,7 @@ unset($_SESSION['auth_error']);
   <head>
     <meta charset="UTF-8">
     <title>Login and Registration - Similyze</title>
-    <link rel="stylesheet" href="assets/css/login.css">
+    <link rel="stylesheet" href="/Plagirism_Detection_System/assets/css/login.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
    <script>
@@ -136,7 +139,7 @@ unset($_SESSION['auth_error']);
           <!-- LOGIN FORM -->
           <div class="login-form">
             <div class="title">Login</div>
-            <form action="Controllers/AuthController.php?action=login" method="post">
+            <form action="app/Controllers/AuthController.php?action=login" method="post">
               <div class="input-boxes">
                 <div id="admin-key-box" class="input-box admin-key" style="display:none;">
                    <i class="fas fa-key"></i>
@@ -163,7 +166,7 @@ unset($_SESSION['auth_error']);
           <!-- SIGNUP FORM -->
           <div class="signup-form">
             <div class="title">Signup</div>
-            <form action="Controllers/AuthController.php?action=signup" method="post"> 
+            <form action="app/Controllers/AuthController.php?action=signup" method="post"> 
               <div class="input-boxes">
                 <div class="input-box">
                   <i class="fas fa-user"></i>
@@ -219,7 +222,7 @@ unset($_SESSION['auth_error']);
           <!-- FORGOT PASSWORD FORM -->
           <div class="forgot-form">
             <div class="title">Reset Password</div>
-            <form action="Controllers/AuthController.php?action=forgot_password" method="post">
+            <form action="app/Controllers/AuthController.php?action=forgot_password" method="post">
               <div class="input-boxes">
                 <div class="input-box">
                   <i class="fas fa-user"></i>

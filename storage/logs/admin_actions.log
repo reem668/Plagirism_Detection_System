@@ -24,3 +24,8 @@
 [2025-12-17 08:42:49] Admin: Test Admin (ID: 20) | Action: delete_user | Target User ID: 21 | Description: Deleted user: Test User (69426d0984938.delete@test.com) | IP: unknown
 [2025-12-17 08:42:49] Admin: Test Admin (ID: 23) | Action: toggle_status | Target User ID: 24 | Description: User banned: Test User | IP: unknown
 [2025-12-17 08:42:49] Admin: Test Admin (ID: 23) | Action: toggle_status | Target User ID: 24 | Description: User unbanned: Test User | IP: unknown
+[2025-12-19 23:22:06] Admin Admin added user: reem (reem2@gmail.com) as student
+[2025-12-19 23:22:24] Admin Admin updated user ID 6: reem -> reem, role: student, status: banned
+[2025-12-19 23:22:43] Admin Admin deleted user ID 6: reem (reem2@gmail.com) - Role: student
+[2025-12-19 23:23:02] Admin Admin added user: reem (reem2@gmail.com) as student
+[2025-12-19 23:23:44] Admin Admin updated user ID 7: reem -> reem, role: student, status: banned

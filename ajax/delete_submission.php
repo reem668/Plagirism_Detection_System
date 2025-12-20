@@ -1,8 +1,9 @@
 <?php
 session_start();
-require_once '../includes/db.php';
-require_once '../Helpers/Csrf.php';
-require_once '../Controllers/AdminSubmissionController.php';
+
+require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../app/Helpers/Csrf.php';
+require_once __DIR__ . '/../app/Controllers/AdminSubmissionController.php';
 
 use Helpers\Csrf;
 use Controllers\AdminSubmissionController;
@@ -31,6 +32,6 @@ if (!$id || !is_numeric($id)) {
 }
 
 $controller = new AdminSubmissionController();
-$result = $controller->deleteSubmission($id);
+$result     = $controller->deleteSubmission((int)$id);
 
 echo json_encode($result);
