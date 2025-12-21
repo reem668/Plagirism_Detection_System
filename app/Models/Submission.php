@@ -188,15 +188,16 @@ class Submission
      * Delete a submission by ID
      **/
 
-     public function deleteByStudent(int $id, int $userId): bool {
-     $stmt = $this->conn->prepare("UPDATE submissions SET status='deleted' WHERE id=? AND user_id=?");
-     $stmt->bind_param("ii", $id, $userId);
-     $stmt->execute();
-     $affected = $stmt->affected_rows;
-     $stmt->close();
-    
-     return $affected > 0;
-        }
+    public function deleteByStudent(int $id, int $userId): bool
+    {
+        $stmt = $this->conn->prepare("UPDATE submissions SET status='deleted' WHERE id=? AND user_id=?");
+        $stmt->bind_param("ii", $id, $userId);
+        $stmt->execute();
+        $affected = $stmt->affected_rows;
+        $stmt->close();
+
+        return $affected > 0;
+    }
 
     /**
      * Update submission fields
@@ -368,7 +369,7 @@ class Submission
      */
     public function addFeedback(int $submission_id, string $feedback): bool
     {
-        $stmt = $this->conn->prepare("UPDATE submissions SET feedback = ? WHERE id = ?");
+        $stmt = $this->conn->prepare("UPDATE submissions SET notification_seen = 0, feedback = ? WHERE id = ?");
         if (!$stmt) {
             die("Prepare failed: " . $this->conn->error);
         }

@@ -24,7 +24,8 @@ class SubmissionController {
     $this->rootPath = dirname(__DIR__);
 
     if ($conn === null) {
-        require $this->rootPath . '/../../includes/db.php';
+          require $this->rootPath . '/../includes/db.php';
+
         $this->conn = $conn;
     } else {
         $this->conn = $conn;

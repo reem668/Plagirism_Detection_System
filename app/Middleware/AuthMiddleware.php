@@ -150,7 +150,7 @@ class AuthMiddleware
                 header("Location: {$this->baseUrl}/admin.php");
                 break;
             case 'instructor':
-                header("Location: {$this->baseUrl}/app/Views/instructor/Instructor.php");
+                header("Location: {$this->baseUrl}/app/Views/instructor/dashboard.php");
                 break;
             case 'student':
                 header("Location: {$this->baseUrl}/app/Views/student/student_index.php");
@@ -174,7 +174,7 @@ class AuthMiddleware
                     header("Location: {$this->baseUrl}/admin.php");
                     break;
                 case 'instructor':
-                    header("Location: {$this->baseUrl}/app/Views/instructor/Instructor.php");
+                    header("Location: {$this->baseUrl}/app/Views/instructor/dashboard.php");
                     break;
                 case 'student':
                     header("Location: {$this->baseUrl}/app/Views/student/student_index.php");
@@ -194,10 +194,10 @@ class AuthMiddleware
         }
 
         return [
-            'id'    => $this->session->getUserId(),
-            'name'  => $this->session->getUserName(),
+            'id' => $this->session->getUserId(),
+            'name' => $this->session->getUserName(),
             'email' => $this->session->getUserEmail(),
-            'role'  => $this->session->getUserRole(),
+            'role' => $this->session->getUserRole(),
         ];
     }
 
@@ -216,7 +216,7 @@ class AuthMiddleware
             return true;
         }
 
-        return (int)$currentUserId === (int)$resourceUserId;
+        return (int) $currentUserId === (int) $resourceUserId;
     }
 
     /**

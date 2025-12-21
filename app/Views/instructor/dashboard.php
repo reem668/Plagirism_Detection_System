@@ -1,16 +1,17 @@
 <?php
 /**
  * Protected Instructor Dashboard - Main Entry Point
- * Only accessible by authenticated instructors
+ * This file should only be accessed by authenticated instructors
+ * Follows the same pattern as admin dashboard views
  */
 
 // 1) Load DB connection FIRST (defines $conn)
-require_once __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/../../../includes/db.php';
 
 // 2) Load autoloader and middleware
-require_once __DIR__ . '/app/Core/autoload.php';
-require_once __DIR__ . '/app/Helpers/SessionManager.php';
-require_once __DIR__ . '/app/Middleware/AuthMiddleware.php';
+require_once __DIR__ . '/../../Core/autoload.php';
+require_once __DIR__ . '/../../Helpers/SessionManager.php';
+require_once __DIR__ . '/../../Middleware/AuthMiddleware.php';
 
 use Helpers\SessionManager;
 use Middleware\AuthMiddleware;
@@ -19,16 +20,16 @@ use Helpers\Csrf;
 
 // Initialize authentication
 $session = SessionManager::getInstance();
-$auth    = new AuthMiddleware();
+$auth = new AuthMiddleware();
 
 // Require instructor role
 $auth->requireRole('instructor');
 
-// Security constant
+// Security constant (prevents direct access to Instructor.php view)
 define('INSTRUCTOR_ACCESS', true);
 
 // Authenticated instructor
-$currentUser   = $auth->getCurrentUser();
+$currentUser = $auth->getCurrentUser();
 $instructor_id = $currentUser['id'];
 
 // 3) $conn now exists, pass into controller
@@ -52,18 +53,18 @@ if (!$instructor) {
 }
 
 // Fetch dashboard data
-$stats             = $controller->getStats($instructor_id);
+$stats = $controller->getStats($instructor_id);
 $enrolled_students = $controller->getEnrolledStudents($instructor_id);
-$submissions       = $controller->getSubmissions($instructor_id);
-$trash             = $controller->getTrash($instructor_id);
+$submissions = $controller->getSubmissions($instructor_id);
+$trash = $controller->getTrash($instructor_id);
 
 // CSRF
-require_once __DIR__ . '/app/Helpers/Csrf.php';
+require_once __DIR__ . '/../../Helpers/Csrf.php';
 $csrf_token = Csrf::token();
 
 // Messages
 $success_msg = $_GET['success'] ?? '';
-$error_msg   = $_GET['error'] ?? '';
+$error_msg = $_GET['error'] ?? '';
 
-// View
-require __DIR__ . '/app/Views/instructor/Instructor.php';
+// Include the view
+require __DIR__ . '/Instructor.php';

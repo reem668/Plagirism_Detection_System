@@ -1,6 +1,6 @@
 // assets/js/student_dashboard.js
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
 
     // ================================
     // PAGE NAVIGATION
@@ -27,6 +27,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Show initial page
     if (pages[view]) {
         showPage(pages[view]);
+        if (view === 'notifications') {
+            markNotificationsAsSeen();
+        }
     } else {
         showPage(pages.home);
     }
@@ -35,7 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
     Object.keys(pages).forEach(key => {
         const btn = document.getElementById(key + 'Btn');
         if (btn) {
-            btn.addEventListener('click', function(e) {
+            btn.addEventListener('click', function (e) {
                 e.preventDefault();
                 showPage(pages[key]);
                 window.history.pushState({}, '', `student_index.php?view=${key}`);
@@ -76,7 +79,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         fetch('mark_notifications_seen.php', {
             method: 'POST',
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: `_csrf=${encodeURIComponent(window.CSRF_TOKEN)}&user_id=${encodeURIComponent(window.USER_ID)}`
         }).catch(err => console.error('Failed to mark notifications as seen:', err));
     }

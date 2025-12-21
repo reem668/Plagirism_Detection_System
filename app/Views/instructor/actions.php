@@ -15,20 +15,20 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// 1) Initialize database connection FIRST (same as student/dashboard)
-require_once __DIR__ . '/includes/db.php';
+// 1) Initialize database connection FIRST
+require_once __DIR__ . '/../../../includes/db.php';
 if (!isset($conn) || !$conn) {
     die("Database connection failed. Please check your database configuration.");
 }
 
 // 2) Load app classes
-require_once __DIR__ . '/app/Core/autoload.php';
-require_once __DIR__ . '/app/Helpers/SessionManager.php';
-require_once __DIR__ . '/app/Middleware/AuthMiddleware.php';
-require_once __DIR__ . '/app/Controllers/InstructorController.php';
-require_once __DIR__ . '/app/Helpers/Csrf.php';
-require_once __DIR__ . '/app/Helpers/Validator.php';
-require_once __DIR__ . '/app/Models/Instructor.php';
+require_once __DIR__ . '/../../Core/autoload.php';
+require_once __DIR__ . '/../../Helpers/SessionManager.php';
+require_once __DIR__ . '/../../Middleware/AuthMiddleware.php';
+require_once __DIR__ . '/../../Controllers/InstructorController.php';
+require_once __DIR__ . '/../../Helpers/Csrf.php';
+require_once __DIR__ . '/../../Helpers/Validator.php';
+require_once __DIR__ . '/../../Models/Instructor.php';
 
 use Helpers\SessionManager;
 use Middleware\AuthMiddleware;
@@ -39,13 +39,13 @@ use Models\Instructor;
 
 // Initialize authentication
 $session = SessionManager::getInstance();
-$auth    = new AuthMiddleware();
+$auth = new AuthMiddleware();
 
 // Require instructor role
 $auth->requireRole('instructor');
 
 // Get current authenticated instructor
-$currentUser   = $auth->getCurrentUser();
+$currentUser = $auth->getCurrentUser();
 $instructor_id = $currentUser['id'];
 
 // Initialize controller with existing connection
@@ -56,22 +56,23 @@ $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
 // Validate action parameter
 if (empty($action)) {
-    header("Location: /Plagirism_Detection_System/Instructordashboard.php?error=" . urlencode('No action specified'));
+    header("Location: /Plagirism_Detection_System/app/Views/instructor/dashboard.php?error=" . urlencode('No action specified'));
     exit;
 }
 
 // Log all instructor actions for audit trail
-function logInstructorAction($instructor_id, $action, $submission_id, $success) {
-    $logFile = __DIR__ . '/storage/logs/instructor_actions.log';
-    $logDir  = dirname($logFile);
+function logInstructorAction($instructor_id, $action, $submission_id, $success)
+{
+    $logFile = __DIR__ . '/../../../storage/logs/instructor_actions.log';
+    $logDir = dirname($logFile);
 
     if (!file_exists($logDir)) {
         mkdir($logDir, 0755, true);
     }
 
     $timestamp = date('Y-m-d H:i:s');
-    $status    = $success ? 'SUCCESS' : 'FAILED';
-    $ip        = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    $status = $success ? 'SUCCESS' : 'FAILED';
+    $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
 
     $logEntry = "[{$timestamp}] {$status} - Instructor ID: {$instructor_id}, Action: {$action}, Submission ID: {$submission_id}, IP: {$ip}\n";
 
@@ -82,12 +83,12 @@ function logInstructorAction($instructor_id, $action, $submission_id, $success) 
 // Handle GET requests (view and download actions)
 // ============================================================
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    $submission_id = (int)($_GET['id'] ?? 0);
+    $submission_id = (int) ($_GET['id'] ?? 0);
 
     // Validate submission ID
     if ($submission_id <= 0) {
         logInstructorAction($instructor_id, $action, $submission_id, false);
-        header("Location: /Plagirism_Detection_System/Instructordashboard.php?error=" . urlencode('Invalid submission ID'));
+        header("Location: /Plagirism_Detection_System/app/Views/instructor/dashboard.php?error=" . urlencode('Invalid submission ID'));
         exit;
     }
 
@@ -107,7 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 logInstructorAction($instructor_id, $action, $submission_id, true);
             } catch (Exception $e) {
                 logInstructorAction($instructor_id, $action, $submission_id, false);
-                header("Location: /Plagirism_Detection_System/Instructordashboard.php?error=" . urlencode('Error viewing report: ' . $e->getMessage()));
+                header("Location: /Plagirism_Detection_System/app/Views/instructor/dashboard.php?error=" . urlencode('Error viewing report: ' . $e->getMessage()));
                 exit;
             }
             break;
@@ -118,14 +119,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 logInstructorAction($instructor_id, $action, $submission_id, true);
             } catch (Exception $e) {
                 logInstructorAction($instructor_id, $action, $submission_id, false);
-                header("Location: /Plagirism_Detection_System/Instructordashboard.php?error=" . urlencode('Error downloading report: ' . $e->getMessage()));
+                header("Location: /Plagirism_Detection_System/app/Views/instructor/dashboard.php?error=" . urlencode('Error downloading report: ' . $e->getMessage()));
                 exit;
             }
             break;
 
         default:
             logInstructorAction($instructor_id, $action, $submission_id, false);
-            header("Location: /Plagirism_Detection_System/Instructordashboard.php?error=" . urlencode('Invalid action'));
+            header("Location: /Plagirism_Detection_System/app/Views/instructor/dashboard.php?error=" . urlencode('Invalid action'));
             exit;
     }
 }
@@ -137,16 +138,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Verify CSRF token for all POST requests
     if (!Csrf::verify($_POST['_csrf'] ?? '')) {
         logInstructorAction($instructor_id, $action, 0, false);
-        header("Location: /Plagirism_Detection_System/Instructordashboard.php?error=" . urlencode('Security token validation failed. Please try again.'));
+        header("Location: /Plagirism_Detection_System/app/Views/instructor/dashboard.php?error=" . urlencode('Security token validation failed. Please try again.'));
         exit;
     }
 
     // Get and validate submission ID
-    $submission_id = (int)($_POST['submission_id'] ?? 0);
+    $submission_id = (int) ($_POST['submission_id'] ?? 0);
 
     if ($submission_id <= 0) {
         logInstructorAction($instructor_id, $action, $submission_id, false);
-        header("Location: /Plagirism_Detection_System/Instructordashboard.php?error=" . urlencode('Invalid submission ID'));
+        header("Location: /Plagirism_Detection_System/app/Views/instructor/dashboard.php?error=" . urlencode('Invalid submission ID'));
         exit;
     }
 
@@ -212,14 +213,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         default:
             $message = 'Invalid action specified.';
-            $success  = false;
+            $success = false;
             logInstructorAction($instructor_id, $action, $submission_id, false);
             break;
     }
 
     // Redirect with appropriate message
-    $status      = $success ? 'success' : 'error';
-    $redirectUrl = "/Plagirism_Detection_System/Instructordashboard.php?{$status}=" . urlencode($message);
+    $status = $success ? 'success' : 'error';
+    $redirectUrl = "/Plagirism_Detection_System/app/Views/instructor/dashboard.php?{$status}=" . urlencode($message);
 
     if (isset($_POST['current_view'])) {
         $redirectUrl .= "&view=" . urlencode($_POST['current_view']);
@@ -231,5 +232,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // If no valid HTTP method matched, redirect to dashboard
 logInstructorAction($instructor_id, $action, 0, false);
-header("Location: /Plagirism_Detection_System/Instructordashboard.php?error=" . urlencode('Invalid request method'));
+header("Location: /Plagirism_Detection_System/app/Views/instructor/dashboard.php?error=" . urlencode('Invalid request method'));
 exit;

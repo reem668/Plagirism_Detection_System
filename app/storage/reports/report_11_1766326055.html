@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='UTF-8'>
+<title>Submission Report #11</title>
+<style>body{font-family:Arial,sans-serif;padding:20px;} mark{background:yellow;} .summary{margin-top:20px;}</style>
+</head>
+<body>
+<h1>Report for Submission #11</h1>
+<div class='summary'>
+<p><strong>Plagiarised:</strong> 0%</p>
+<p><strong>Exact Match:</strong> 0%</p>
+<p><strong>Partial Match:</strong> 0%</p>
+</div>
+<h2>Text with highlighted matches</h2>
+<p>checking for plagirism 
+Dynamic program approach solves problems by dividing them into smaller ones, then solving each problem and storing it’s result to use it in future use .1.Egg Dropping Problem:In Egg Dropping Problem , giving number of eggs and number of floors,the goal is to find minimum number of attempts needed to get from which floor an egg can be dropped without breaking . The subproblem is that we define dp[i][j]as the minimum number of trials  needed i for the eggs and j for the floors .For each floor x, we calculate:We compute the worst case for each x:worst = 1 + max(dp[i - 1][x - 1], dp[i][j - x]))Our goal is to find the minimum among all worst cases :dp[i][j] = min(worst)When egg breaks , then fewer eggs and fewer floors to check (dp[i-1][x-1])When egg doesn’t break , then same eggs, fewer floor to check (dp[i][j-x] )In this algorithm, dynamic approach computes the optimal strategy by choosing the minimum of the worst casesAll values of dp[i][j] are stored In a table so that repeated subproblems are not recalculated.2.Laziness problem :In the laziness problem the goal is to maximize total energy for a student who cannot attend two lectures in a row and want to collect energy points. It involves finding best time or position to perform an action that minimizes total cost.The subproblem is dp[i] the maximum energy that can be gained from lectures up to index iWe take the maximum of both options:dp[i] = max(dp[i-1], dp[i-2] + lectures[i]) dp[i-1]:The student skips the current lecture and takes the best energy value from previous dp[i-2]+energy[i]:attend the current lecture and skip the previousvalues are stored in the dp[] array, so  decision is only computed once</p>
+</body>
+</html>
