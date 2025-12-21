@@ -63,3 +63,9 @@
 [2025-12-21 17:05:07] SUCCESS login attempt for 'Habiba@gmail.com' from IP: ::1
 [2025-12-21 17:05:35] SUCCESS login attempt for 'Salma@gmail.com' from IP: ::1
 [2025-12-21 18:27:39] SUCCESS login attempt for 'sham@gmail.com' from IP: ::1
+[2025-12-21 21:29:35] SUCCESS login attempt for 'sham@gmail.com' from IP: ::1
+[2025-12-21 21:29:56] SUCCESS login attempt for 'shadw@gmail.com' from IP: ::1
+[2025-12-21 21:30:34] SUCCESS login attempt for 'salma@gmail.com' from IP: ::1
+[2025-12-21 21:30:55] FAILED login attempt for 'admin@gmail.com' from IP: ::1
+[2025-12-21 21:31:16] SUCCESS login attempt for 'admin@gmail.com' from IP: ::1
+[2025-12-21 21:32:23] SUCCESS login attempt for 'shadw@gmail.com' from IP: ::1
