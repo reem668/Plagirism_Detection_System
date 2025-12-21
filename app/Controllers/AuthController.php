@@ -283,19 +283,28 @@ class AuthController
      */
     public function setGoogleRole()
     {
-        $role = $_GET['role'] ?? 'student';
-        
-        // Validate role
-        $allowedRoles = ['student', 'instructor'];
-        if (!in_array($role, $allowedRoles, true)) {
-            $role = 'student';
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
         }
         
-        $_SESSION['google_signup_role'] = $role;
+        $role = $_GET['role'] ?? '';
+        
+        // If role is empty, clear the session (for login)
+        if (empty($role)) {
+            unset($_SESSION['google_signup_role']);
+        } else {
+            // Validate role and set it (for signup)
+            $allowedRoles = ['student', 'instructor'];
+            if (in_array($role, $allowedRoles, true)) {
+                $_SESSION['google_signup_role'] = $role;
+            } else {
+                $_SESSION['google_signup_role'] = 'student'; // default
+            }
+        }
         
         // Return success (for AJAX call)
         header('Content-Type: application/json');
-        echo json_encode(['success' => true, 'role' => $role]);
+        echo json_encode(['success' => true, 'role' => $role ?: 'none']);
         exit();
     }
 
@@ -527,7 +536,8 @@ class AuthController
         
         // New user - create account with Google
         // Get role from session (set before Google auth) or default to student
-        $role = $_SESSION['google_signup_role'] ?? 'student';
+        // Only use role from session if it exists (signup flow), otherwise default to student
+        $role = isset($_SESSION['google_signup_role']) ? $_SESSION['google_signup_role'] : 'student';
         unset($_SESSION['google_signup_role']); // Clear it after use
         
         // Validate role

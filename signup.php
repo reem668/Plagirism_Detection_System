@@ -35,17 +35,30 @@ unset($_SESSION['auth_error']);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
    <script>
       // Google Sign-In function
-      async function signInWithGoogle(context) {
-        // For signup, get the selected role from the form
+      async function signInWithGoogle(context, event) {
+        // Prevent form submission if event is provided
+        if (event) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        
+        // For signup only, get the selected role from the form
         if (context === 'signup') {
           const roleRadios = document.querySelectorAll('#signup-role-selection input[name="role"]');
-          let selectedRole = 'student'; // default
+          let selectedRole = null;
           
+          // Check which role is selected
           roleRadios.forEach(radio => {
             if (radio.checked) {
               selectedRole = radio.value;
             }
           });
+          
+          // VALIDATION: User MUST select a role before proceeding
+          if (!selectedRole) {
+            alert('Please select whether you are a Student or Instructor before continuing with Google signup.');
+            return false;
+          }
           
           // Store role in session via AJAX before redirecting
           try {
@@ -53,14 +66,20 @@ unset($_SESSION['auth_error']);
               method: 'GET',
               credentials: 'same-origin'
             });
+            // After setting role, redirect to Google OAuth
+            window.location.href = '<?= BASE_URL ?>/app/Controllers/AuthController.php?action=google_auth';
           } catch (error) {
-            console.error('Failed to set role, will default to student:', error);
-            // Continue anyway - role will default to student
+            console.error('Failed to set role:', error);
+            alert('Failed to set role. Please try again.');
+            return false;
           }
+        } else {
+          // For login, redirect immediately without setting role
+          // No role needed for existing users
+          window.location.href = '<?= BASE_URL ?>/app/Controllers/AuthController.php?action=google_auth';
         }
         
-        // Redirect to Google OAuth (for both login and signup)
-        window.location.href = '<?= BASE_URL ?>/app/Controllers/AuthController.php?action=google_auth';
+        return false; // Prevent any default behavior
       }
 
       document.addEventListener("keydown", function(e) {
@@ -236,7 +255,7 @@ unset($_SESSION['auth_error']);
                   <span>OR</span>
                 </div>
                 <div class="google-signin-wrapper">
-                  <button type="button" class="google-signin-btn" onclick="signInWithGoogle('login')">
+                  <button type="button" class="google-signin-btn" onclick="signInWithGoogle('login', event); return false;">
                     <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
                       <g fill="#000" fill-rule="evenodd">
                         <path d="M9 3.48c1.69 0 2.83.73 3.48 1.34l2.54-2.48C13.46.89 11.43 0 9 0 5.48 0 2.44 2.02.96 4.96l2.91 2.26C4.6 5.05 6.62 3.48 9 3.48z" fill="#EA4335"/>
@@ -297,7 +316,7 @@ unset($_SESSION['auth_error']);
                   <label>Role</label>
                   <div class="role-selection" id="signup-role-selection">
                     <div class="role-option">
-                      <input type="radio" id="signup-role-student" name="role" value="student" required checked>
+                      <input type="radio" id="signup-role-student" name="role" value="student" required>
                       <label for="signup-role-student">Student</label>
                     </div>
                     <div class="role-option">
@@ -326,7 +345,7 @@ unset($_SESSION['auth_error']);
                   <span>OR</span>
                 </div>
                 <div class="google-signin-wrapper">
-                  <button type="button" class="google-signin-btn" onclick="signInWithGoogle('signup')">
+                  <button type="button" class="google-signin-btn" onclick="signInWithGoogle('signup', event); return false;">
                     <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
                       <g fill="#000" fill-rule="evenodd">
                         <path d="M9 3.48c1.69 0 2.83.73 3.48 1.34l2.54-2.48C13.46.89 11.43 0 9 0 5.48 0 2.44 2.02.96 4.96l2.91 2.26C4.6 5.05 6.62 3.48 9 3.48z" fill="#EA4335"/>
