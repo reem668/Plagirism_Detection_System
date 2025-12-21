@@ -14,7 +14,8 @@ $session = SessionManager::getInstance();
 // Destroy session
 $session->destroy();
 
+
 // Redirect to login page
-header("Location: /Plagirism_Detection_System/signup.php?logout=success");
+header("Location: /plagirism_detection_system/signup.php?logout=success");
 exit();
 ?>

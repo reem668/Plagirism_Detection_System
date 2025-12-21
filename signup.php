@@ -11,8 +11,14 @@ require_once __DIR__ . '/app/Middleware/AuthMiddleware.php';
 use Helpers\SessionManager;
 use Middleware\AuthMiddleware;
 
-// Define BASE_URL constant
-define('BASE_URL', '/Plagirism_Detection_System');
+// Define BASE_URL constant - detect dynamically to work with any access method
+$scriptDir = dirname($_SERVER['SCRIPT_NAME']);
+// Normalize path separators and ensure it starts with /
+$baseUrl = str_replace('\\', '/', $scriptDir);
+if ($baseUrl !== '/' && substr($baseUrl, -1) !== '/') {
+    $baseUrl = rtrim($baseUrl, '/');
+}
+define('BASE_URL', $baseUrl ?: '/Plagirism_Detection_System');
 
 // Initialize
 $session = SessionManager::getInstance();
@@ -28,9 +34,10 @@ unset($_SESSION['auth_error']);
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
   <head>
+    <base href="<?= BASE_URL ?>/">
     <meta charset="UTF-8">
     <title>Login and Registration - Similyze</title>
-    <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/login.css">
+    <link rel="stylesheet" href="assets/css/login.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
      <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
