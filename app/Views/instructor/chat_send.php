@@ -1,7 +1,4 @@
 <?php
-
-
-
 // app/Views/instructor/chat_send.php
 
 if (session_status() !== PHP_SESSION_ACTIVE) {
@@ -19,9 +16,7 @@ use Helpers\SessionManager;
 use Middleware\AuthMiddleware;
 use Helpers\Csrf;
 
-// ... rest of your file unchanged ...
-
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=utf-8');
 
 $session = SessionManager::getInstance();
 $auth    = new AuthMiddleware();
@@ -50,16 +45,16 @@ if (!Csrf::verify($_POST['_csrf'] ?? '')) {
 
 // Get current user info
 $currentUser = $auth->getCurrentUser();
-$senderId    = $currentUser['id'] ?? 0;
+$senderId    = $currentUser['id']  ?? 0;
 $senderRole  = $currentUser['role'] ?? '';
 
 // Determine receiver ID based on sender role
 if ($senderRole === 'student') {
     // Student sending to instructor
-    $receiverId = intval($_POST['instructor_id'] ?? 0);
+    $receiverId = (int)($_POST['instructor_id'] ?? 0);
 } elseif ($senderRole === 'instructor') {
     // Instructor sending to student
-    $receiverId = intval($_POST['student_id'] ?? 0);
+    $receiverId = (int)($_POST['student_id'] ?? 0);
 } else {
     echo json_encode(['success' => false, 'message' => 'Invalid user role']);
     exit;
@@ -75,7 +70,7 @@ if (!$senderId || !$receiverId || $message === '') {
     exit;
 }
 
-// Validate message length (optional security measure)
+// Validate message length
 if (strlen($message) > 5000) {
     echo json_encode(['success' => false, 'message' => 'Message too long (max 5000 characters)']);
     exit;
@@ -112,3 +107,5 @@ try {
         'message' => 'Failed to send message. Please try again.'
     ]);
 }
+
+exit;

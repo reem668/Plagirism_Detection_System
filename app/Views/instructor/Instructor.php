@@ -387,23 +387,23 @@ $csrf_token = Csrf::token();
 
     <!-- Security: Auto-logout notification + inline chat JS -->
     <script>
-      // Warn user before session expires
-      const SESSION_TIMEOUT = 3600000; // 1 hour in milliseconds
-      const WARNING_TIME    = 300000;  // 5 minutes before timeout
+    const SESSION_TIMEOUT = 3600000; // 1 hour
+    const WARNING_TIME    = 300000;  // 5 minutes before timeout
 
-      setTimeout(function () {
+    // Warn user before session expires
+    setTimeout(function () {
         if (confirm('Your session will expire in 5 minutes. Do you want to continue?')) {
-          window.location.reload();
+            window.location.reload();
         }
-      }, SESSION_TIMEOUT - WARNING_TIME);
+    }, SESSION_TIMEOUT - WARNING_TIME);
 
-      // Auto-logout after session expires
-      setTimeout(function () {
+    // Auto-logout after session expires
+    setTimeout(function () {
         alert('Your session has expired. You will be redirected to login.');
         window.location.href = '<?php echo BASE_URL; ?>/logout';
-      }, SESSION_TIMEOUT);
+    }, SESSION_TIMEOUT);
 
-      (function() {
+    (function() {
         const chatWindow        = document.getElementById('chatWindow');
         const chatStudentSelect = document.getElementById('chatStudentSelect');
         const chatForm          = document.getElementById('chatForm');
@@ -413,167 +413,166 @@ $csrf_token = Csrf::token();
         let currentStudentId = null;
         let fetchInterval    = null;
 
-        // Render messages in chat window
+        // Render messages in chat window (same visual style)
         function renderMessages(messages) {
-          if (!chatWindow) return;
+            if (!chatWindow) return;
 
-          chatWindow.innerHTML = '';
+            chatWindow.innerHTML = '';
 
-          if (!messages || messages.length === 0) {
-            chatWindow.innerHTML =
-              '<p style="text-align:center;color:#64748b;padding:20px;">No messages yet. Start the conversation!</p>';
-            return;
-          }
+            if (!messages || messages.length === 0) {
+                chatWindow.innerHTML =
+                    '<p style="text-align:center;color:#64748b;padding:20px;">No messages yet. Start the conversation!</p>';
+                return;
+            }
 
-          messages.forEach(function(msg) {
-            const div = document.createElement('div');
-            div.style.marginBottom = '12px';
-            div.style.textAlign    = msg.sender === 'instructor' ? 'right' : 'left';
+            messages.forEach(function(msg) {
+                const div = document.createElement('div');
+                div.style.marginBottom = '12px';
+                div.style.textAlign    = msg.sender === 'instructor' ? 'right' : 'left';
 
-            const bubble = document.createElement('div');
-            bubble.style.display      = 'inline-block';
-            bubble.style.maxWidth     = '70%';
-            bubble.style.padding      = '10px 14px';
-            bubble.style.borderRadius = '12px';
-            bubble.style.background   = msg.sender === 'instructor' ? '#3b82f6' : '#e2e8f0';
-            bubble.style.color        = msg.sender === 'instructor' ? 'white' : '#1e293b';
-            bubble.style.textAlign    = 'left';
-            bubble.style.wordWrap     = 'break-word';
+                const bubble = document.createElement('div');
+                bubble.style.display      = 'inline-block';
+                bubble.style.maxWidth     = '70%';
+                bubble.style.padding      = '10px 14px';
+                bubble.style.borderRadius = '12px';
+                bubble.style.background   = msg.sender === 'instructor' ? '#3b82f6' : '#e2e8f0';
+                bubble.style.color        = msg.sender === 'instructor' ? 'white' : '#1e293b';
+                bubble.style.textAlign    = 'left';
+                bubble.style.wordWrap     = 'break-word';
 
-            bubble.innerHTML =
-              '<strong style="font-size: 12px; opacity: 0.9;">' + msg.sender_name + '</strong><br>' +
-              msg.message + '<br>' +
-              '<small style="font-size: 11px; opacity: 0.8;">' + msg.time + '</small>';
+                bubble.innerHTML =
+                    '<strong style="font-size: 12px; opacity: 0.9;">' + msg.sender_name + '</strong><br>' +
+                    msg.message + '<br>' +
+                    '<small style="font-size: 11px; opacity: 0.8;">' + msg.time + '</small>';
 
-            div.appendChild(bubble);
-            chatWindow.appendChild(div);
-          });
+                div.appendChild(bubble);
+                chatWindow.appendChild(div);
+            });
 
-          chatWindow.scrollTop = chatWindow.scrollHeight;
+            chatWindow.scrollTop = chatWindow.scrollHeight;
         }
 
-        // Fetch messages from server
+        // Fetch messages from server (correct endpoint)
         async function fetchMessages() {
-          if (!currentStudentId) return;
-
-          try {
-            const res  = await fetch(
-              '<?php echo BASE_URL; ?>/ajax/chat_fetch.php?student_id=' +
-              encodeURIComponent(currentStudentId)
-            );
-            const data = await res.json();
-
-            if (data.success) {
-              renderMessages(data.messages);
-            } else {
-              console.error('Failed to fetch messages:', data.error);
-            }
-          } catch (err) {
-            console.error('Fetch messages error:', err);
-          }
-        }
-
-        if (chatStudentSelect) {
-          // Handle student selection change
-          chatStudentSelect.addEventListener('change', function() {
-            currentStudentId = chatStudentSelect.value || null;
-
-            if (fetchInterval) {
-              clearInterval(fetchInterval);
-              fetchInterval = null;
-            }
-
-            if (currentStudentId) {
-              chatMessage.disabled = false;
-              chatSendBtn.disabled = false;
-
-              chatWindow.innerHTML =
-                '<p style="text-align:center;color:#64748b;padding:20px;">Loading messages...</p>';
-              fetchMessages();
-
-              fetchInterval = setInterval(fetchMessages, 3000);
-            } else {
-              chatMessage.disabled = true;
-              chatSendBtn.disabled = true;
-              chatWindow.innerHTML =
-                '<p style="text-align:center;color:#64748b;padding:20px;">Select a student to start chatting</p>';
-            }
-          });
-        }
-
-        if (chatForm) {
-          // Handle sending message
-          chatForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-
-            if (!currentStudentId || !chatMessage.value.trim()) {
-              return;
-            }
-
-            const message         = chatMessage.value.trim();
-            const originalMessage = message;
-            chatMessage.value     = '';
-
-            const formData = new FormData();
-            formData.append('_csrf', window.CSRF_TOKEN);
-            formData.append('student_id', currentStudentId);
-            formData.append('message', message);
+            if (!currentStudentId) return;
 
             try {
-              const res  = await fetch(
-                '<?php echo BASE_URL; ?>/ajax/chat_send.php',
-                {
-                  method: 'POST',
-                  body: formData
-                }
-              );
-              const data = await res.json();
+                const res  = await fetch(
+                    '<?php echo BASE_URL; ?>/app/Views/instructor/chat_fetch.php?student_id=' +
+                    encodeURIComponent(currentStudentId)
+                );
+                const data = await res.json();
 
-              if (data.success) {
-                fetchMessages();
-              } else {
-                alert(data.message || 'Failed to send message.');
-                chatMessage.value = originalMessage;
-              }
+                if (data.success) {
+                    renderMessages(data.messages);
+                } else {
+                    console.error('Failed to fetch messages:', data.error || data.message);
+                }
             } catch (err) {
-              console.error('Send message error:', err);
-              alert('Network error. Please check your connection.');
-              chatMessage.value = originalMessage;
+                console.error('Fetch messages error:', err);
             }
-          });
+        }
+
+        // Handle student selection change
+        if (chatStudentSelect) {
+            chatStudentSelect.addEventListener('change', function() {
+                currentStudentId = chatStudentSelect.value || null;
+
+                if (fetchInterval) {
+                    clearInterval(fetchInterval);
+                    fetchInterval = null;
+                }
+
+                if (currentStudentId) {
+                    chatMessage.disabled = false;
+                    chatSendBtn.disabled = false;
+
+                    chatWindow.innerHTML =
+                        '<p style="text-align:center;color:#64748b;padding:20px;">Loading messages...</p>';
+                    fetchMessages();
+
+                    fetchInterval = setInterval(fetchMessages, 3000);
+                } else {
+                    chatMessage.disabled = true;
+                    chatSendBtn.disabled = true;
+                    chatWindow.innerHTML =
+                        '<p style="text-align:center;color:#64748b;padding:20px;">Select a student to start chatting</p>';
+                }
+            });
+        }
+
+        // Handle sending message
+        if (chatForm) {
+            chatForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                if (!currentStudentId || !chatMessage.value.trim()) {
+                    return;
+                }
+
+                const message         = chatMessage.value.trim();
+                const originalMessage = message;
+                chatMessage.value     = '';
+
+                const formData = new FormData();
+                formData.append('_csrf', window.CSRF_TOKEN);
+                formData.append('student_id', currentStudentId);
+                formData.append('message', message);
+
+                try {
+                    const res  = await fetch(
+                        '<?php echo BASE_URL; ?>/app/Views/instructor/chat_send.php',
+                        {
+                            method: 'POST',
+                            body: formData
+                        }
+                    );
+                    const data = await res.json();
+
+                    if (data.success) {
+                        fetchMessages();
+                    } else {
+                        alert(data.message || 'Failed to send message.');
+                        chatMessage.value = originalMessage;
+                    }
+                } catch (err) {
+                    console.error('Send message error:', err);
+                    alert('Network error. Please check your connection.');
+                    chatMessage.value = originalMessage;
+                }
+            });
         }
 
         // Cleanup on page unload
         window.addEventListener('beforeunload', function() {
-          if (fetchInterval) {
-            clearInterval(fetchInterval);
-          }
+            if (fetchInterval) {
+                clearInterval(fetchInterval);
+            }
         });
-      })();
-      
-      // Safety check: Ensure delete forms only submit the specific submission ID
-      document.addEventListener('DOMContentLoaded', function() {
+    })();
+
+    // Safety check: Ensure delete forms only submit the specific submission ID
+    document.addEventListener('DOMContentLoaded', function() {
         var deleteForms = document.querySelectorAll('.delete-submission-form');
         deleteForms.forEach(function(form) {
-          form.addEventListener('submit', function(e) {
-            var submissionId = parseInt(form.getAttribute('data-submission-id'));
-            var hiddenInput = form.querySelector('.submission-id-input');
-            
-            if (hiddenInput) {
-              // Force the value to be exactly the submission ID from data attribute
-              hiddenInput.value = submissionId;
-              
-              // Double-check the value
-              if (parseInt(hiddenInput.value) !== submissionId) {
-                console.error('Submission ID mismatch! Expected:', submissionId, 'Got:', hiddenInput.value);
-                e.preventDefault();
-                alert('Error: Invalid submission ID. Please refresh the page and try again.');
-                return false;
-              }
-            }
-          });
+            form.addEventListener('submit', function(e) {
+                var submissionId = parseInt(form.getAttribute('data-submission-id'));
+                var hiddenInput  = form.querySelector('.submission-id-input');
+
+                if (hiddenInput) {
+                    hiddenInput.value = submissionId;
+
+                    if (parseInt(hiddenInput.value) !== submissionId) {
+                        console.error('Submission ID mismatch! Expected:', submissionId, 'Got:', hiddenInput.value);
+                        e.preventDefault();
+                        alert('Error: Invalid submission ID. Please refresh the page and try again.');
+                        return false;
+                    }
+                }
+            });
         });
-      });
-    </script>
+    });
+</script>
+
 </body>
 </html>
