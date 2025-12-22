@@ -33,10 +33,12 @@ document.addEventListener('DOMContentLoaded', function() {
     async function fetchMessages() {
         if (!instructorId) return;
         try {
-            const res = await fetch(`chat_fetch.php?instructor_id=${instructorId}`, {cache:'no-store'});
+            // Get BASE_URL from window or use default
+            const baseUrl = window.BASE_URL || '/Plagirism_Detection_System';
+            const res = await fetch(`${baseUrl}/ajax/chat_fetch.php?instructor_id=${instructorId}`, {cache:'no-store'});
             const data = await res.json();
             if (data.success) renderMessages(data.messages);
-        } catch(err) { console.error(err); }
+        } catch(err) { console.error('Chat fetch error:', err); }
     }
 
     chatSelect.addEventListener('change', function() {
@@ -66,11 +68,13 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('instructor_id', instructorId);
         formData.append('message', msg);
         try {
-            const res = await fetch('chat_send.php', { method:'POST', body: formData });
+            // Get BASE_URL from window or use default
+            const baseUrl = window.BASE_URL || '/Plagirism_Detection_System';
+            const res = await fetch(`${baseUrl}/ajax/chat_send.php`, { method:'POST', body: formData });
             const data = await res.json();
             if (data.success) fetchMessages();
             else alert(data.message || 'Failed to send');
-        } catch(err) { console.error(err); alert('Network error'); }
+        } catch(err) { console.error('Chat send error:', err); alert('Network error'); }
     });
 
     window.addEventListener('beforeunload', () => { if (fetchTimer) clearInterval(fetchTimer); });

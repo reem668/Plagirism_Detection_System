@@ -25,7 +25,7 @@ $auth    = new AuthMiddleware();
 
 // Double-check authentication
 if (!$session->isLoggedIn() || $session->getUserRole() !== 'admin') {
-    header('Location: /Plagirism_Detection_System/signup.php');
+    header('Location: ' . BASE_URL . '/signup');
     exit();
 }
 ?>
@@ -78,6 +78,17 @@ if (!$session->isLoggedIn() || $session->getUserRole() !== 'admin') {
         </button>
       </div>
     </form>
+  </div>
+
+  <!-- Search Bar -->
+  <div class="search-filter-bar" style="margin-bottom: 20px;">
+    <input type="text" 
+           id="courseSearchInput" 
+           class="search-bar" 
+           placeholder="🔍 Search courses by name or description...">
+    <button type="button" class="btn" id="clearCourseSearchBtn" style="margin-left: 10px;">
+      <i class="fas fa-times"></i> Clear
+    </button>
   </div>
 
   <!-- Courses Table -->

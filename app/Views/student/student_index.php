@@ -33,6 +33,14 @@ use Controllers\SubmissionController;
 use Controllers\StudentController;
 use Helpers\Csrf;
 
+// Define BASE_URL if not already defined
+if (!defined('BASE_URL')) {
+    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    $scriptDir = dirname($_SERVER['SCRIPT_NAME']);
+    define('BASE_URL', $protocol . '://' . $host . ($scriptDir !== '/' ? $scriptDir : ''));
+}
+
 // ============================================
 // CONSTANTS
 // ============================================
@@ -188,6 +196,20 @@ function countUnseenNotifications(array $submissions): int
  */
 function redirectWithMessage(string $location, string $message, string $type = 'success'): void
 {
+    // Convert old student_index.php URLs to routing format
+    if (strpos($location, 'student_index.php') !== false) {
+        // Extract query string
+        $queryString = '';
+        if (strpos($location, '?') !== false) {
+            $parts = explode('?', $location, 2);
+            $queryString = '?' . $parts[1];
+        }
+        $location = BASE_URL . '/student' . $queryString;
+    } elseif (!preg_match('/^https?:\/\//', $location) && strpos($location, '/') !== 0) {
+        // If it's a relative path without leading slash, prepend BASE_URL/student
+        $location = BASE_URL . '/student?' . parse_url($location, PHP_URL_QUERY);
+    }
+    
     $_SESSION[$type] = $message;
     header("Location: $location");
     exit;
@@ -207,20 +229,20 @@ if (isset($_POST['delete_id'])) {
 
         if ($result === true) {
             redirectWithMessage(
-                'student_index.php?view=trash',
+                BASE_URL . '/student?view=trash',
                 "Submission #$submissionId moved to trash successfully",
                 'success'
             );
         } else {
             redirectWithMessage(
-                'student_index.php?view=history',
+                BASE_URL . '/student?view=history',
                 "Failed to delete submission #$submissionId",
                 'error'
             );
         }
     } else {
         redirectWithMessage(
-            'student_index.php?view=history',
+            BASE_URL . '/student?view=history',
             'Unauthorized: You can only delete your own submissions.',
             'error'
         );
@@ -235,13 +257,13 @@ if (isset($_POST['restore_id'])) {
     if (verifyOwnership($submissionId, $userId, $deletedSubmissions)) {
         $ctrl->restore($submissionId, $userId);
         redirectWithMessage(
-            'student_index.php?view=trash',
+            BASE_URL . '/student?view=trash',
             "Submission #$submissionId restored successfully",
             'success'
         );
     } else {
         redirectWithMessage(
-            'student_index.php?view=trash',
+            BASE_URL . '/student?view=trash',
             'Unauthorized: You can only restore your own submissions.',
             'error'
         );
@@ -284,9 +306,9 @@ function isActiveView(string $view, string $currentView): string
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Plagiarism Detection - Student Dashboard</title>
-    <link rel="stylesheet" href="/Plagirism_Detection_System/assets/css/student.css">
-    <link rel="stylesheet" href="/Plagirism_Detection_System/assets/css/user.css">
-    <link rel="stylesheet" href="/Plagirism_Detection_System/assets/css/chatbot.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/student.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/user.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/chatbot.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
@@ -300,9 +322,9 @@ function isActiveView(string $view, string $currentView): string
             <p class="user-id">ID: <?= htmlspecialchars($userId, ENT_QUOTES) ?></p>
         </div>
         <div class="menu">
-            <a href="student_index.php?view=home" id="homeBtn" data-tooltip="Home">🏠</a>
-            <a href="student_index.php?view=history" id="historyBtn" data-tooltip="Past History">📜</a>
-            <a href="student_index.php?view=notifications" id="notificationsBtn" data-tooltip="Notifications"
+            <a href="<?= BASE_URL ?>/student?view=home" id="homeBtn" data-tooltip="Home">🏠</a>
+            <a href="<?= BASE_URL ?>/student?view=history" id="historyBtn" data-tooltip="Past History">📜</a>
+            <a href="<?= BASE_URL ?>/student?view=notifications" id="notificationsBtn" data-tooltip="Notifications"
                 class="notification-link">
                 🔔
                 <?php if ($notificationCount > 0): ?>
@@ -311,10 +333,10 @@ function isActiveView(string $view, string $currentView): string
                     </span>
                 <?php endif; ?>
             </a>
-            <a href="student_index.php?view=trash" id="trashBtn" data-tooltip="Trash">🗑️</a>
-            <a href="student_index.php?view=chat" id="chatBtn" data-tooltip="Chat with Instructor">💬</a>
+            <a href="<?= BASE_URL ?>/student?view=trash" id="trashBtn" data-tooltip="Trash">🗑️</a>
+            <a href="<?= BASE_URL ?>/student?view=chat" id="chatBtn" data-tooltip="Chat with Instructor">💬</a>
         </div>
-        <a href="/Plagirism_Detection_System/logout" class="logout" id="logoutBtn" data-tooltip="Logout">↻</a>
+        <a href="<?= BASE_URL ?>/logout" class="logout" id="logoutBtn" data-tooltip="Logout">↻</a>
 
     </nav>
 
@@ -395,7 +417,7 @@ function isActiveView(string $view, string $currentView): string
                         <div class="alert-warning">
                             <?= htmlspecialchars($submissionResult['alert_message'], ENT_QUOTES) ?>
                         </div>
-                        <a href="download.php?id=<?= $submissionResult['submission_id'] ?>" class="download-btn">
+                        <a href="<?= BASE_URL ?>/ajax/download_file.php?id=<?= $submissionResult['submission_id'] ?>" class="download-btn">
                             Download Report
                         </a>
                     <?php endif; ?>
@@ -440,10 +462,10 @@ function isActiveView(string $view, string $currentView): string
                         <?php endif; ?>
 
                         <?php if ($ctrl->getReportPath($submission['id'])): ?>
-                            <a href="download.php?id=<?= $submission['id'] ?>">Download Report</a>
+                            <a href="<?= BASE_URL ?>/ajax/download_file.php?id=<?= $submission['id'] ?>">Download Report</a>
                         <?php endif; ?>
 
-                        <form method="POST" class="delete-form">
+                        <form method="POST" action="<?= BASE_URL ?>/student" class="delete-form">
                             <input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES) ?>">
                             <input type="hidden" name="delete_id" value="<?= $submission['id'] ?>">
                             <button type="submit" class="btn-delete">Delete</button>
@@ -525,10 +547,10 @@ function isActiveView(string $view, string $currentView): string
                         <div class="report-actions">
                             <strong>📊 Detailed Report Available</strong>
                             <div class="action-buttons">
-                                <a href="view_report.php?id=<?= $submission['id'] ?>" target="_blank" class="btn btn-view">
+                                <a href="<?= BASE_URL ?>/ajax/view_report.php?id=<?= $submission['id'] ?>" target="_blank" class="btn btn-view">
                                     👁 View Report
                                 </a>
-                                <a href="download.php?id=<?= $submission['id'] ?>" class="btn btn-download">
+                                <a href="<?= BASE_URL ?>/ajax/download_file.php?id=<?= $submission['id'] ?>" class="btn btn-download">
                                     📥 Download Report
                                 </a>
                             </div>
@@ -558,7 +580,7 @@ function isActiveView(string $view, string $currentView): string
                         <?php if (!empty($submission['teacher'])): ?>
                             <p>Instructor: <?= htmlspecialchars($submission['teacher'], ENT_QUOTES) ?></p>
                         <?php endif; ?>
-                        <form method="POST" class="restore-form">
+                        <form method="POST" action="<?= BASE_URL ?>/student" class="restore-form">
                             <input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES) ?>">
                             <input type="hidden" name="restore_id" value="<?= $submission['id'] ?>">
                             <button type="submit" class="btn-restore">Restore</button>
@@ -603,9 +625,10 @@ function isActiveView(string $view, string $currentView): string
     <script>
         window.CSRF_TOKEN = '<?= htmlspecialchars($csrfToken, ENT_QUOTES) ?>';
         window.USER_ID = '<?= htmlspecialchars($userId, ENT_QUOTES) ?>';
+        window.BASE_URL = '<?= BASE_URL ?>';
     </script>
-    <script src="/Plagirism_Detection_System/assets/js/student_dashboard.js"></script>
-    <script src="/Plagirism_Detection_System/assets/js/chat.js"></script>
+    <script src="<?= BASE_URL ?>/assets/js/student_dashboard.js"></script>
+    <script src="<?= BASE_URL ?>/assets/js/chat.js"></script>
 
     <script>
         document.getElementById('logoutBtn').addEventListener('click', function (e) {
@@ -636,7 +659,7 @@ function isActiveView(string $view, string $currentView): string
             });
         });
     </script>
-    <script src="/Plagirism_Detection_System/assets/js/chatbot.js"></script>
+    <script src="<?= BASE_URL ?>/assets/js/chatbot.js"></script>
 
 
 

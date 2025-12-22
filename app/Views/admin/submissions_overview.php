@@ -28,7 +28,7 @@ $auth    = new AuthMiddleware();
 
 
 if (!$session->isLoggedIn() || $session->getUserRole() !== 'admin') {
-    header('Location: ' . BASE_URL . '/signup.php');
+    header('Location: ' . BASE_URL . '/signup');
     exit();
 }
 
@@ -46,8 +46,8 @@ $filters = [
         : 0,
 ];
 
-// Sanitize filter inputs
-$filters['status'] = in_array($filters['status'], ['completed', 'processing', 'uploaded', 'failed', ''], true)
+// Sanitize filter inputs - use actual database status values
+$filters['status'] = in_array($filters['status'], ['active', 'pending', 'accepted', 'rejected', 'deleted', ''], true)
     ? $filters['status']
     : '';
 $filters['risk'] = in_array($filters['risk'], ['low', 'medium', 'high', ''], true)
@@ -126,7 +126,7 @@ $csrfToken = \Helpers\Csrf::token();
   </div>
 
   <!-- Search and Filter Form -->
-  <form method="GET" action="admin.php" class="search-filter-bar">
+  <form method="GET" action="<?= BASE_URL ?>/admin" class="search-filter-bar">
     <input type="hidden" name="page" value="submissions_overview">
     
     <input type="text" 
@@ -137,10 +137,11 @@ $csrfToken = \Helpers\Csrf::token();
     
     <select name="status" class="filter-select">
       <option value="">All Status</option>
-      <option value="completed" <?= $filters['status'] === 'completed' ? 'selected' : '' ?>>Completed</option>
-      <option value="processing" <?= $filters['status'] === 'processing' ? 'selected' : '' ?>>Processing</option>
-      <option value="uploaded" <?= $filters['status'] === 'uploaded' ? 'selected' : '' ?>>Uploaded</option>
-      <option value="failed" <?= $filters['status'] === 'failed' ? 'selected' : '' ?>>Failed</option>
+      <option value="active" <?= $filters['status'] === 'active' ? 'selected' : '' ?>>Active</option>
+      <option value="pending" <?= $filters['status'] === 'pending' ? 'selected' : '' ?>>Pending</option>
+      <option value="accepted" <?= $filters['status'] === 'accepted' ? 'selected' : '' ?>>Accepted</option>
+      <option value="rejected" <?= $filters['status'] === 'rejected' ? 'selected' : '' ?>>Rejected</option>
+      <option value="deleted" <?= $filters['status'] === 'deleted' ? 'selected' : '' ?>>Deleted</option>
     </select>
 
     <select name="risk" class="filter-select">
@@ -154,7 +155,7 @@ $csrfToken = \Helpers\Csrf::token();
       <i class="fas fa-search"></i> Filter
     </button>
 
-    <a href="admin.php?page=submissions_overview&export=csv" class="btn primary">
+    <a href="<?= BASE_URL ?>/admin?page=submissions_overview&export=csv" class="btn primary">
       <i class="fas fa-download"></i> Export CSV
     </a>
   </form>

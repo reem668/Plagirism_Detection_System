@@ -21,6 +21,14 @@ use Helpers\SessionManager;
 use Middleware\AuthMiddleware;
 use Helpers\Csrf;
 
+// Define BASE_URL if not already defined
+if (!defined('BASE_URL')) {
+    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    $scriptDir = dirname($_SERVER['SCRIPT_NAME']);
+    define('BASE_URL', $protocol . '://' . $host . ($scriptDir !== '/' ? $scriptDir : ''));
+}
+
 $session = SessionManager::getInstance();
 $auth    = new AuthMiddleware();
 if (session_status() !== PHP_SESSION_ACTIVE) {
@@ -30,7 +38,7 @@ $csrf_token = Csrf::token();
 
 // Double-check authentication
 if (!$session->isLoggedIn() || $session->getUserRole() !== 'instructor') {
-    header("Location: /Plagirism_Detection_System/signup.php");
+    header("Location: " . BASE_URL . "/signup");
     exit();
 }
 
@@ -52,7 +60,7 @@ $csrf_token = Csrf::token();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Instructor Dashboard - Plagiarism Detector</title>
     <!-- Correct CSS path from root assets folder -->
-    <link rel="stylesheet" href="/Plagirism_Detection_System/assets/css/Instructor.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/Instructor.css">
     <style>
         /* Additional security styles */
         .security-badge {
@@ -127,7 +135,7 @@ $csrf_token = Csrf::token();
         </div>
 
         <div class="signout-section">
-            <a href="/Plagirism_Detection_System/logout" style="text-decoration: none;">
+            <a href="<?= BASE_URL ?>/logout" style="text-decoration: none;">
                 <button class="btn-signout">🚪 Sign Out</button>
             </a>
         </div>
@@ -211,7 +219,7 @@ $csrf_token = Csrf::token();
                                     </div>
                                 <?php endif; ?>
                                 <div class="actions" style="margin-top: 15px;">
-                                    <form method="POST" action="/Plagirism_Detection_System/instructor_actions.php" style="display: inline;">
+                                    <form method="POST" action="<?php echo BASE_URL; ?>/instructor_actions" style="display: inline;">
                                         <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES); ?>">
                                         <input type="hidden" name="action" value="restore">
                                         <input type="hidden" name="submission_id" value="<?php echo $submission['id']; ?>">
@@ -277,34 +285,34 @@ $csrf_token = Csrf::token();
                                 <?php endif; ?>
 
                                 <div class="actions" style="margin-top: 15px; margin-bottom: 15px;">
-                                    <form method="POST" action="/Plagirism_Detection_System/instructor_actions.php" style="display: inline;">
+                                    <form method="POST" action="<?php echo BASE_URL; ?>/instructor_actions" style="display: inline;">
                                         <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES); ?>">
                                         <input type="hidden" name="action" value="accept">
                                         <input type="hidden" name="submission_id" value="<?php echo $submission['id']; ?>">
                                         <button type="submit" class="btn btn-accept" <?php echo ($submission['status'] ?? '') === 'accepted' ? 'disabled' : ''; ?>>✓ Accept</button>
                                     </form>
 
-                                    <form method="POST" action="/Plagirism_Detection_System/instructor_actions.php" style="display: inline;">
+                                    <form method="POST" action="<?php echo BASE_URL; ?>/instructor_actions" style="display: inline;">
                                         <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES); ?>">
                                         <input type="hidden" name="action" value="reject">
                                         <input type="hidden" name="submission_id" value="<?php echo $submission['id']; ?>">
                                         <button type="submit" class="btn btn-reject" <?php echo ($submission['status'] ?? '') === 'rejected' ? 'disabled' : ''; ?>>✗ Reject</button>
                                     </form>
 
-                                    <form method="POST" action="/Plagirism_Detection_System/instructor_actions.php" style="display: inline;">
+                                    <form method="POST" action="<?php echo BASE_URL; ?>/instructor_actions" style="display: inline;" class="delete-submission-form" data-submission-id="<?php echo (int)$submission['id']; ?>">
                                         <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES); ?>">
                                         <input type="hidden" name="action" value="delete">
-                                        <input type="hidden" name="submission_id" value="<?php echo $submission['id']; ?>">
-                                        <button type="submit" class="btn btn-delete" onclick="return confirm('Are you sure you want to move this submission to trash?');">🗑️ Delete</button>
+                                        <input type="hidden" name="submission_id" value="<?php echo (int)$submission['id']; ?>" class="submission-id-input">
+                                        <button type="submit" class="btn btn-delete" onclick="return confirm('Are you sure you want to move submission #<?php echo (int)$submission['id']; ?> to trash?');">🗑️ Delete</button>
                                     </form>
 
-                                    <a href="/Plagirism_Detection_System/instructor_actions.php?action=view_report&id=<?php echo $submission['id']; ?>" target="_blank" class="btn btn-feedback" style="text-decoration: none; display: inline-block; padding: 10px 20px; background: #0891b2; color: white; border-radius: 6px; border: none; cursor: pointer;">📊 View Report</a>
+                                    <a href="<?php echo BASE_URL; ?>/instructor_actions?action=view_report&id=<?php echo $submission['id']; ?>" target="_blank" class="btn btn-feedback" style="text-decoration: none; display: inline-block; padding: 10px 20px; background: #0891b2; color: white; border-radius: 6px; border: none; cursor: pointer;">📊 View Report</a>
 
-                                    <a href="/Plagirism_Detection_System/instructor_actions.php?action=download_report&id=<?php echo $submission['id']; ?>" class="btn btn-feedback" style="text-decoration: none; display: inline-block; padding: 10px 20px; background: #7c3aed; color: white; border-radius: 6px; border: none; cursor: pointer;">⬇️ Download Report</a>
+                                    <a href="<?php echo BASE_URL; ?>/instructor_actions?action=download_report&id=<?php echo $submission['id']; ?>" class="btn btn-feedback" style="text-decoration: none; display: inline-block; padding: 10px 20px; background: #7c3aed; color: white; border-radius: 6px; border: none; cursor: pointer;">⬇️ Download Report</a>
                                 </div>
 
                                 <div class="feedback-section" style="margin-top: 15px;">
-                                    <form method="POST" action="/Plagirism_Detection_System/instructor_actions.php">
+                                    <form method="POST" action="<?php echo BASE_URL; ?>/instructor_actions">
                                         <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES); ?>">
                                         <input type="hidden" name="action" value="add_feedback">
                                         <input type="hidden" name="submission_id" value="<?php echo $submission['id']; ?>">
@@ -392,7 +400,7 @@ $csrf_token = Csrf::token();
       // Auto-logout after session expires
       setTimeout(function () {
         alert('Your session has expired. You will be redirected to login.');
-        window.location.href = '/Plagirism_Detection_System/logout';
+        window.location.href = '<?php echo BASE_URL; ?>/logout';
       }, SESSION_TIMEOUT);
 
       (function() {
@@ -450,7 +458,7 @@ $csrf_token = Csrf::token();
 
           try {
             const res  = await fetch(
-              '/Plagirism_Detection_System/app/Views/instructor/chat_fetch.php?student_id=' +
+              '<?php echo BASE_URL; ?>/ajax/chat_fetch.php?student_id=' +
               encodeURIComponent(currentStudentId)
             );
             const data = await res.json();
@@ -513,7 +521,7 @@ $csrf_token = Csrf::token();
 
             try {
               const res  = await fetch(
-                '/Plagirism_Detection_System/app/Views/instructor/chat_send.php',
+                '<?php echo BASE_URL; ?>/ajax/chat_send.php',
                 {
                   method: 'POST',
                   body: formData
@@ -543,6 +551,29 @@ $csrf_token = Csrf::token();
         });
       })();
       
+      // Safety check: Ensure delete forms only submit the specific submission ID
+      document.addEventListener('DOMContentLoaded', function() {
+        var deleteForms = document.querySelectorAll('.delete-submission-form');
+        deleteForms.forEach(function(form) {
+          form.addEventListener('submit', function(e) {
+            var submissionId = parseInt(form.getAttribute('data-submission-id'));
+            var hiddenInput = form.querySelector('.submission-id-input');
+            
+            if (hiddenInput) {
+              // Force the value to be exactly the submission ID from data attribute
+              hiddenInput.value = submissionId;
+              
+              // Double-check the value
+              if (parseInt(hiddenInput.value) !== submissionId) {
+                console.error('Submission ID mismatch! Expected:', submissionId, 'Got:', hiddenInput.value);
+                e.preventDefault();
+                alert('Error: Invalid submission ID. Please refresh the page and try again.');
+                return false;
+              }
+            }
+          });
+        });
+      });
     </script>
 </body>
 </html>

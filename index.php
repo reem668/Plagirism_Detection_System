@@ -47,6 +47,8 @@ $requestPath = '/' . trim($requestPath, '/');
 
 // Route the request
 $route = trim($requestPath, '/');
+// Remove .php extension if present for routing
+$route = preg_replace('/\.php$/', '', $route);
 $routeParts = explode('/', $route);
 $mainRoute = $routeParts[0] ?? '';
 
@@ -127,6 +129,19 @@ switch ($mainRoute) {
         } else {
             http_response_code(404);
             echo json_encode(['success' => false, 'message' => 'Endpoint not found']);
+        }
+        exit;
+        break;
+
+    case 'instructor_actions':
+        // Instructor actions handler - requires authentication
+        $auth->requireRole('instructor');
+        $actionsFile = APP_ROOT . '/app/Views/instructor/actions.php';
+        if (file_exists($actionsFile)) {
+            require $actionsFile;
+        } else {
+            http_response_code(404);
+            show404();
         }
         exit;
         break;
