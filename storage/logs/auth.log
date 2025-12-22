@@ -79,6 +79,7 @@
 [2025-12-22 11:10:47] SUCCESS login attempt for 'admin@gmail.com' from IP: ::1
 [2025-12-22 11:23:38] FAILED login attempt for 'admin@gmail.com' from IP: ::1
 [2025-12-22 11:23:50] SUCCESS login attempt for 'admin@gmail.com' from IP: ::1
+<<<<<<< Updated upstream
 [2025-12-22 11:33:06] SUCCESS login attempt for 'shadw@gmail.com' from IP: ::1
 [2025-12-22 11:33:25] SUCCESS login attempt for 'sham@gmail.com' from IP: ::1
 [2025-12-22 11:33:56] SUCCESS login attempt for 'sham@gmail.com' from IP: ::1
@@ -101,3 +102,9 @@
 [2025-12-22 15:55:34] SUCCESS login attempt for 'gamal@gmail.com' from IP: ::1
 [2025-12-22 16:08:53] SUCCESS login attempt for 'Habiba@gmail.com' from IP: ::1
 [2025-12-22 16:09:08] SUCCESS login attempt for 'sham@gmail.com' from IP: ::1
+=======
+[2025-12-22 18:44:08] SUCCESS login attempt for 'admin@gmail.com' from IP: ::1
+[2025-12-22 20:28:05] FAILED login attempt for 'admin@gmail.com' from IP: ::1
+[2025-12-22 20:28:12] SUCCESS login attempt for 'admin@gmail.com' from IP: ::1
+[2025-12-22 20:35:59] SUCCESS login attempt for 'riri@gmail.com' from IP: ::1
+>>>>>>> Stashed changes
