@@ -21,14 +21,6 @@ use Helpers\SessionManager;
 use Middleware\AuthMiddleware;
 use Helpers\Csrf;
 
-// Define BASE_URL if not already defined
-if (!defined('BASE_URL')) {
-    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
-    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-    $scriptDir = dirname($_SERVER['SCRIPT_NAME']);
-    define('BASE_URL', $protocol . '://' . $host . ($scriptDir !== '/' ? $scriptDir : ''));
-}
-
 $session = SessionManager::getInstance();
 $auth    = new AuthMiddleware();
 if (session_status() !== PHP_SESSION_ACTIVE) {
@@ -38,7 +30,7 @@ $csrf_token = Csrf::token();
 
 // Double-check authentication
 if (!$session->isLoggedIn() || $session->getUserRole() !== 'instructor') {
-    header("Location: " . BASE_URL . "/signup");
+    header("Location: /Plagirism_Detection_System/signup.php");
     exit();
 }
 
@@ -60,7 +52,7 @@ $csrf_token = Csrf::token();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Instructor Dashboard - Plagiarism Detector</title>
     <!-- Correct CSS path from root assets folder -->
-    <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/Instructor.css">
+    <link rel="stylesheet" href="/Plagirism_Detection_System/assets/css/Instructor.css">
     <style>
         /* Additional security styles */
         .security-badge {
@@ -135,7 +127,7 @@ $csrf_token = Csrf::token();
         </div>
 
         <div class="signout-section">
-            <a href="<?= BASE_URL ?>/logout" style="text-decoration: none;">
+            <a href="/Plagirism_Detection_System/logout" style="text-decoration: none;">
                 <button class="btn-signout">🚪 Sign Out</button>
             </a>
         </div>
@@ -219,7 +211,7 @@ $csrf_token = Csrf::token();
                                     </div>
                                 <?php endif; ?>
                                 <div class="actions" style="margin-top: 15px;">
-                                    <form method="POST" action="<?php echo BASE_URL; ?>/instructor_actions" style="display: inline;">
+                                    <form method="POST" action="/Plagirism_Detection_System/instructor_actions.php" style="display: inline;">
                                         <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES); ?>">
                                         <input type="hidden" name="action" value="restore">
                                         <input type="hidden" name="submission_id" value="<?php echo $submission['id']; ?>">
@@ -285,34 +277,34 @@ $csrf_token = Csrf::token();
                                 <?php endif; ?>
 
                                 <div class="actions" style="margin-top: 15px; margin-bottom: 15px;">
-                                    <form method="POST" action="<?php echo BASE_URL; ?>/instructor_actions" style="display: inline;">
+                                    <form method="POST" action="/Plagirism_Detection_System/instructor_actions.php" style="display: inline;">
                                         <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES); ?>">
                                         <input type="hidden" name="action" value="accept">
                                         <input type="hidden" name="submission_id" value="<?php echo $submission['id']; ?>">
                                         <button type="submit" class="btn btn-accept" <?php echo ($submission['status'] ?? '') === 'accepted' ? 'disabled' : ''; ?>>✓ Accept</button>
                                     </form>
 
-                                    <form method="POST" action="<?php echo BASE_URL; ?>/instructor_actions" style="display: inline;">
+                                    <form method="POST" action="/Plagirism_Detection_System/instructor_actions.php" style="display: inline;">
                                         <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES); ?>">
                                         <input type="hidden" name="action" value="reject">
                                         <input type="hidden" name="submission_id" value="<?php echo $submission['id']; ?>">
                                         <button type="submit" class="btn btn-reject" <?php echo ($submission['status'] ?? '') === 'rejected' ? 'disabled' : ''; ?>>✗ Reject</button>
                                     </form>
 
-                                    <form method="POST" action="<?php echo BASE_URL; ?>/instructor_actions" style="display: inline;" class="delete-submission-form" data-submission-id="<?php echo (int)$submission['id']; ?>">
+                                    <form method="POST" action="/Plagirism_Detection_System/instructor_actions.php" style="display: inline;">
                                         <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES); ?>">
                                         <input type="hidden" name="action" value="delete">
-                                        <input type="hidden" name="submission_id" value="<?php echo (int)$submission['id']; ?>" class="submission-id-input">
-                                        <button type="submit" class="btn btn-delete" onclick="return confirm('Are you sure you want to move submission #<?php echo (int)$submission['id']; ?> to trash?');">🗑️ Delete</button>
+                                        <input type="hidden" name="submission_id" value="<?php echo $submission['id']; ?>">
+                                        <button type="submit" class="btn btn-delete" onclick="return confirm('Are you sure you want to move this submission to trash?');">🗑️ Delete</button>
                                     </form>
 
-                                    <a href="<?php echo BASE_URL; ?>/instructor_actions?action=view_report&id=<?php echo $submission['id']; ?>" target="_blank" class="btn btn-feedback" style="text-decoration: none; display: inline-block; padding: 10px 20px; background: #0891b2; color: white; border-radius: 6px; border: none; cursor: pointer;">📊 View Report</a>
+                                    <a href="/Plagirism_Detection_System/instructor_actions.php?action=view_report&id=<?php echo $submission['id']; ?>" target="_blank" class="btn btn-feedback" style="text-decoration: none; display: inline-block; padding: 10px 20px; background: #0891b2; color: white; border-radius: 6px; border: none; cursor: pointer;">📊 View Report</a>
 
-                                    <a href="<?php echo BASE_URL; ?>/instructor_actions?action=download_report&id=<?php echo $submission['id']; ?>" class="btn btn-feedback" style="text-decoration: none; display: inline-block; padding: 10px 20px; background: #7c3aed; color: white; border-radius: 6px; border: none; cursor: pointer;">⬇️ Download Report</a>
+                                    <a href="/Plagirism_Detection_System/instructor_actions.php?action=download_report&id=<?php echo $submission['id']; ?>" class="btn btn-feedback" style="text-decoration: none; display: inline-block; padding: 10px 20px; background: #7c3aed; color: white; border-radius: 6px; border: none; cursor: pointer;">⬇️ Download Report</a>
                                 </div>
 
                                 <div class="feedback-section" style="margin-top: 15px;">
-                                    <form method="POST" action="<?php echo BASE_URL; ?>/instructor_actions">
+                                    <form method="POST" action="/Plagirism_Detection_System/instructor_actions.php">
                                         <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES); ?>">
                                         <input type="hidden" name="action" value="add_feedback">
                                         <input type="hidden" name="submission_id" value="<?php echo $submission['id']; ?>">
@@ -400,8 +392,13 @@ $csrf_token = Csrf::token();
     // Auto-logout after session expires
     setTimeout(function () {
         alert('Your session has expired. You will be redirected to login.');
+<<<<<<< HEAD
         window.location.href = '<?php echo BASE_URL; ?>/logout';
     }, SESSION_TIMEOUT);
+=======
+        window.location.href = '/Plagirism_Detection_System/logout';
+      }, SESSION_TIMEOUT);
+>>>>>>> parent of 95da686 (done trash and restore thing , added courses search)
 
     (function() {
         const chatWindow        = document.getElementById('chatWindow');
@@ -454,6 +451,7 @@ $csrf_token = Csrf::token();
 
         // Fetch messages from server (correct endpoint)
         async function fetchMessages() {
+<<<<<<< HEAD
             if (!currentStudentId) return;
 
             try {
@@ -462,6 +460,82 @@ $csrf_token = Csrf::token();
                     encodeURIComponent(currentStudentId)
                 );
                 const data = await res.json();
+=======
+          if (!currentStudentId) return;
+
+          try {
+            const res  = await fetch(
+              '/Plagirism_Detection_System/app/Views/instructor/chat_fetch.php?student_id=' +
+              encodeURIComponent(currentStudentId)
+            );
+            const data = await res.json();
+
+            if (data.success) {
+              renderMessages(data.messages);
+            } else {
+              console.error('Failed to fetch messages:', data.error);
+            }
+          } catch (err) {
+            console.error('Fetch messages error:', err);
+          }
+        }
+
+        if (chatStudentSelect) {
+          // Handle student selection change
+          chatStudentSelect.addEventListener('change', function() {
+            currentStudentId = chatStudentSelect.value || null;
+
+            if (fetchInterval) {
+              clearInterval(fetchInterval);
+              fetchInterval = null;
+            }
+
+            if (currentStudentId) {
+              chatMessage.disabled = false;
+              chatSendBtn.disabled = false;
+
+              chatWindow.innerHTML =
+                '<p style="text-align:center;color:#64748b;padding:20px;">Loading messages...</p>';
+              fetchMessages();
+
+              fetchInterval = setInterval(fetchMessages, 3000);
+            } else {
+              chatMessage.disabled = true;
+              chatSendBtn.disabled = true;
+              chatWindow.innerHTML =
+                '<p style="text-align:center;color:#64748b;padding:20px;">Select a student to start chatting</p>';
+            }
+          });
+        }
+
+        if (chatForm) {
+          // Handle sending message
+          chatForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            if (!currentStudentId || !chatMessage.value.trim()) {
+              return;
+            }
+
+            const message         = chatMessage.value.trim();
+            const originalMessage = message;
+            chatMessage.value     = '';
+
+            const formData = new FormData();
+            formData.append('_csrf', window.CSRF_TOKEN);
+            formData.append('student_id', currentStudentId);
+            formData.append('message', message);
+
+            try {
+              const res  = await fetch(
+                '/Plagirism_Detection_System/app/Views/instructor/chat_send.php',
+                {
+                  method: 'POST',
+                  body: formData
+                }
+              );
+              const data = await res.json();
+>>>>>>> parent of 95da686 (done trash and restore thing , added courses search)
 
                 if (data.success) {
                     renderMessages(data.messages);
@@ -549,6 +623,7 @@ $csrf_token = Csrf::token();
                 clearInterval(fetchInterval);
             }
         });
+<<<<<<< HEAD
     })();
 
     // Safety check: Ensure delete forms only submit the specific submission ID
@@ -574,5 +649,10 @@ $csrf_token = Csrf::token();
     });
 </script>
 
+=======
+      })();
+      
+    </script>
+>>>>>>> parent of 95da686 (done trash and restore thing , added courses search)
 </body>
 </html>

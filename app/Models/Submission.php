@@ -466,24 +466,16 @@ public function create(array $data): int
      */
     public function moveToTrash(int $submission_id): bool
     {
-        // Ensure we have a valid ID
-        $submission_id = (int)$submission_id;
-        if ($submission_id <= 0) {
-            return false;
-        }
-        
-        // Update ONLY this specific submission by ID
-        $stmt = $this->conn->prepare("UPDATE submissions SET status = 'deleted' WHERE id = ? LIMIT 1");
+        $stmt = $this->conn->prepare("UPDATE submissions SET status = 'deleted' WHERE id = ?");
         if (!$stmt) {
             return false;
         }
 
         $stmt->bind_param("i", $submission_id);
         $success = $stmt->execute();
-        $affected = $stmt->affected_rows;
         $stmt->close();
 
-        return $success && $affected === 1; // Must affect exactly 1 row
+        return $success;
     }
 }
 ?>

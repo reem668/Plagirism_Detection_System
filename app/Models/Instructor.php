@@ -38,10 +38,9 @@ class Instructor {
         $submissions = [];
 
         // Fetch submissions where instructor_id matches OR course instructor_id matches
-        // Use DISTINCT to prevent duplicate rows from multiple JOIN conditions
         // Prefer the instructor's actual course name when the submission points to the generic course
         $sql = "
-            SELECT DISTINCT s.id, s.user_id, s.course_id, s.instructor_id, s.teacher, s.text_content, s.file_path, s.stored_name,
+            SELECT s.id, s.user_id, s.course_id, s.instructor_id, s.teacher, s.text_content, s.file_path, s.stored_name,
                    s.file_size, s.similarity, s.status, s.created_at, s.feedback,
                    u.name AS student_name, u.email AS student_email,
                    COALESCE(
@@ -75,10 +74,9 @@ class Instructor {
         $trash = [];
 
         // Fetch deleted submissions where instructor_id matches OR course instructor_id matches
-        // Use DISTINCT to prevent duplicate rows from multiple JOIN conditions
         // Prefer the instructor's actual course name when the submission points to the generic course
         $sql = "
-            SELECT DISTINCT s.id, s.user_id, s.course_id, s.instructor_id, s.teacher, s.text_content, s.file_path, s.stored_name,
+            SELECT s.id, s.user_id, s.course_id, s.instructor_id, s.teacher, s.text_content, s.file_path, s.stored_name,
                    s.file_size, s.similarity, s.status, s.created_at, s.feedback,
                    u.name AS student_name, u.email AS student_email,
                    COALESCE(

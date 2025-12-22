@@ -21,7 +21,11 @@ $session = SessionManager::getInstance();
 $auth = new AuthMiddleware();
 
 if (!$session->isLoggedIn() || $session->getUserRole() !== 'admin') {
+<<<<<<< HEAD
     header('Location: ' . BASE_URL . '/signup');
+=======
+    header("Location: /Plagirism_Detection_System/signup.php");
+>>>>>>> parent of 95da686 (done trash and restore thing , added courses search)
     exit();
 }
 ?>

@@ -54,17 +54,9 @@ $controller = new InstructorController($conn);
 // Get action from request
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
-// Define BASE_URL if not already defined
-if (!defined('BASE_URL')) {
-    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
-    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-    $scriptDir = dirname($_SERVER['SCRIPT_NAME']);
-    define('BASE_URL', $protocol . '://' . $host . ($scriptDir !== '/' ? $scriptDir : ''));
-}
-
 // Validate action parameter
 if (empty($action)) {
-    header("Location: " . BASE_URL . "/instructor?error=" . urlencode('No action specified'));
+    header("Location: /Plagirism_Detection_System/app/Views/instructor/dashboard.php?error=" . urlencode('No action specified'));
     exit;
 }
 
@@ -96,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     // Validate submission ID
     if ($submission_id <= 0) {
         logInstructorAction($instructor_id, $action, $submission_id, false);
-        header("Location: " . BASE_URL . "/instructor?error=" . urlencode('Invalid submission ID'));
+        header("Location: /Plagirism_Detection_System/app/Views/instructor/dashboard.php?error=" . urlencode('Invalid submission ID'));
         exit;
     }
 
@@ -116,7 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 logInstructorAction($instructor_id, $action, $submission_id, true);
             } catch (Exception $e) {
                 logInstructorAction($instructor_id, $action, $submission_id, false);
-                header("Location: " . BASE_URL . "/instructor?error=" . urlencode('Error viewing report: ' . $e->getMessage()));
+                header("Location: /Plagirism_Detection_System/app/Views/instructor/dashboard.php?error=" . urlencode('Error viewing report: ' . $e->getMessage()));
                 exit;
             }
             break;
@@ -127,14 +119,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 logInstructorAction($instructor_id, $action, $submission_id, true);
             } catch (Exception $e) {
                 logInstructorAction($instructor_id, $action, $submission_id, false);
-                header("Location: " . BASE_URL . "/instructor?error=" . urlencode('Error downloading report: ' . $e->getMessage()));
+                header("Location: /Plagirism_Detection_System/app/Views/instructor/dashboard.php?error=" . urlencode('Error downloading report: ' . $e->getMessage()));
                 exit;
             }
             break;
 
         default:
             logInstructorAction($instructor_id, $action, $submission_id, false);
-            header("Location: " . BASE_URL . "/instructor?error=" . urlencode('Invalid action'));
+            header("Location: /Plagirism_Detection_System/app/Views/instructor/dashboard.php?error=" . urlencode('Invalid action'));
             exit;
     }
 }
@@ -146,30 +138,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Verify CSRF token for all POST requests
     if (!Csrf::verify($_POST['_csrf'] ?? '')) {
         logInstructorAction($instructor_id, $action, 0, false);
-        header("Location: " . BASE_URL . "/instructor?error=" . urlencode('Security token validation failed. Please try again.'));
+        header("Location: /Plagirism_Detection_System/app/Views/instructor/dashboard.php?error=" . urlencode('Security token validation failed. Please try again.'));
         exit;
     }
 
-    // Get and validate submission ID - ensure it's a single integer, not an array
-    $raw_submission_id = $_POST['submission_id'] ?? 0;
-    
-    // If it's an array, take the first element (shouldn't happen, but safety check)
-    if (is_array($raw_submission_id)) {
-        $raw_submission_id = $raw_submission_id[0] ?? 0;
-    }
-    
-    $submission_id = (int) $raw_submission_id;
+    // Get and validate submission ID
+    $submission_id = (int) ($_POST['submission_id'] ?? 0);
 
     if ($submission_id <= 0) {
         logInstructorAction($instructor_id, $action, $submission_id, false);
-        header("Location: " . BASE_URL . "/instructor?error=" . urlencode('Invalid submission ID'));
-        exit;
-    }
-    
-    // Double-check: ensure submission_id is a valid single integer
-    if (!is_numeric($submission_id) || $submission_id != (int)$submission_id) {
-        logInstructorAction($instructor_id, $action, $submission_id, false);
-        header("Location: " . BASE_URL . "/instructor?error=" . urlencode('Invalid submission ID format'));
+        header("Location: /Plagirism_Detection_System/app/Views/instructor/dashboard.php?error=" . urlencode('Invalid submission ID'));
         exit;
     }
 
@@ -242,7 +220,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Redirect with appropriate message
     $status = $success ? 'success' : 'error';
-    $redirectUrl = BASE_URL . "/instructor?{$status}=" . urlencode($message);
+    $redirectUrl = "/Plagirism_Detection_System/app/Views/instructor/dashboard.php?{$status}=" . urlencode($message);
 
     if (isset($_POST['current_view'])) {
         $redirectUrl .= "&view=" . urlencode($_POST['current_view']);
@@ -254,5 +232,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // If no valid HTTP method matched, redirect to dashboard
 logInstructorAction($instructor_id, $action, 0, false);
-header("Location: " . BASE_URL . "/instructor?error=" . urlencode('Invalid request method'));
+header("Location: /Plagirism_Detection_System/app/Views/instructor/dashboard.php?error=" . urlencode('Invalid request method'));
 exit;

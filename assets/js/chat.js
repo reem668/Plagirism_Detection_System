@@ -42,6 +42,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!instructorId) return;
 
         try {
+<<<<<<< HEAD
             const baseUrl = window.BASE_URL || '/Plagirism_Detection_System';
 
             // Student page: PHP endpoint expects ?instructor_id=...
@@ -60,6 +61,12 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (err) {
             console.error('Chat fetch error:', err);
         }
+=======
+            const res = await fetch(`chat_fetch.php?instructor_id=${instructorId}`, {cache:'no-store'});
+            const data = await res.json();
+            if (data.success) renderMessages(data.messages);
+        } catch(err) { console.error(err); }
+>>>>>>> parent of 95da686 (done trash and restore thing , added courses search)
     }
 
     chatSelect.addEventListener('change', function() {
@@ -99,6 +106,7 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('message', msg);
 
         try {
+<<<<<<< HEAD
             const baseUrl = window.BASE_URL || '/Plagirism_Detection_System';
 
             const res  = await fetch(
@@ -117,6 +125,13 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Chat send error:', err);
             alert('Network error');
         }
+=======
+            const res = await fetch('chat_send.php', { method:'POST', body: formData });
+            const data = await res.json();
+            if (data.success) fetchMessages();
+            else alert(data.message || 'Failed to send');
+        } catch(err) { console.error(err); alert('Network error'); }
+>>>>>>> parent of 95da686 (done trash and restore thing , added courses search)
     });
 
     window.addEventListener('beforeunload', () => {

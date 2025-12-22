@@ -159,45 +159,18 @@ class InstructorController
      */
     public function deleteSubmission(int $submission_id, int $instructor_id): bool
     {
-        // Ensure we have valid integers
-        $submission_id = (int)$submission_id;
-        $instructor_id = (int)$instructor_id;
-        
-        if ($submission_id <= 0 || $instructor_id <= 0) {
-            return false;
-        }
-        
-        // First verify the submission exists and get its current status
-        $stmt = $this->conn->prepare("SELECT id, status FROM submissions WHERE id = ? LIMIT 1");
-        $stmt->bind_param("i", $submission_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $submission = $result->fetch_assoc();
-        $stmt->close();
-        
-        if (!$submission) {
-            return false; // Submission doesn't exist
-        }
-        
-        // Check ownership
         if (!$this->instructorModel->ownsSubmission($instructor_id, $submission_id)) {
             $this->logSecurityEvent($instructor_id, 'UNAUTHORIZED_DELETE_ATTEMPT', $submission_id);
             return false;
         }
 
-        // Delete ONLY this specific submission by ID
-        $stmt = $this->conn->prepare("UPDATE submissions SET status = 'deleted' WHERE id = ? AND status != 'deleted' LIMIT 1");
-        $stmt->bind_param("i", $submission_id);
-        $success = $stmt->execute();
-        $affected = $stmt->affected_rows;
-        $stmt->close();
+        $result = $this->submissionModel->moveToTrash($submission_id);
 
-        if ($success && $affected === 1) {
+        if ($result) {
             $this->logAction($instructor_id, 'delete', $submission_id);
-            return true;
         }
 
-        return false;
+        return $result;
     }
 
     /**
@@ -313,32 +286,21 @@ class InstructorController
      */
     public function restoreSubmission(int $submission_id, int $instructor_id): bool
     {
-        // Ensure we have valid IDs
-        $submission_id = (int)$submission_id;
-        $instructor_id = (int)$instructor_id;
-        
-        if ($submission_id <= 0 || $instructor_id <= 0) {
-            return false;
-        }
-        
         if (!$this->instructorModel->ownsSubmission($instructor_id, $submission_id)) {
             $this->logSecurityEvent($instructor_id, 'UNAUTHORIZED_RESTORE_ATTEMPT', $submission_id);
             return false;
         }
 
-        // Restore ONLY this specific submission by ID
-        $stmt = $this->conn->prepare("UPDATE submissions SET status = 'active' WHERE id = ? AND status = 'deleted' LIMIT 1");
+        $stmt = $this->conn->prepare("UPDATE submissions SET status = 'active' WHERE id = ?");
         $stmt->bind_param("i", $submission_id);
         $result = $stmt->execute();
-        $affected = $stmt->affected_rows;
         $stmt->close();
 
-        if ($result && $affected === 1) {
+        if ($result) {
             $this->logAction($instructor_id, 'restore', $submission_id);
-            return true;
         }
 
-        return false;
+        return $result;
     }
 
     /**

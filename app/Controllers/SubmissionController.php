@@ -192,19 +192,11 @@ class SubmissionController {
      */
     public function delete($submissionId, $studentId)
     {
-        // Ensure we have valid integers
-        $submissionId = (int)$submissionId;
-        $studentId = (int)$studentId;
-        
-        if ($submissionId <= 0 || $studentId <= 0) {
-            return false;
-        }
-
         // Load model properly with DB connection
         $submission = new Submission($this->conn);
 
-        // Correct method: get submission by its ID - ONLY this specific submission
-        $stmt = $this->conn->prepare("SELECT user_id, status FROM submissions WHERE id = ? LIMIT 1");
+        // Correct method: get submission by its ID
+        $stmt = $this->conn->prepare("SELECT user_id FROM submissions WHERE id = ?");
         $stmt->bind_param("i", $submissionId);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -212,58 +204,31 @@ class SubmissionController {
         $stmt->close();
 
         if (!$row) {
-            return false; // submission does not exist
+            return "invalid"; // submission does not exist
         }
 
-        // Check ownership - must be this specific student's submission
-        if ((int)$row['user_id'] !== $studentId) {
-            return false; // not your submission
+        // Check ownership
+        if ($row['user_id'] != $studentId) {
+            return "unauthorized"; // not your submission
         }
 
-        // Update ONLY this specific submission by ID and user_id
-        $stmt = $this->conn->prepare("UPDATE submissions SET status='deleted' WHERE id=? AND user_id=? LIMIT 1");
-        $stmt->bind_param("ii", $submissionId, $studentId);
-        $stmt->execute();
-        $affected = $stmt->affected_rows;
-        $stmt->close();
+         $stmt = $this->conn->prepare(
+        "UPDATE submissions SET status='deleted' WHERE id=? AND user_id=?"
+    );
+    $stmt->bind_param("ii", $submissionId, $studentId);
+    $stmt->execute();
+    $affected = $stmt->affected_rows;
+    $stmt->close();
 
-        return $affected === 1; // Must affect exactly 1 row
+    return $affected > 0;
     }
 
     public function restore(int $id, int $userId){
-        // Ensure we have valid integers
-        $id = (int)$id;
-        $userId = (int)$userId;
-        
-        if ($id <= 0 || $userId <= 0) {
-            return false;
-        }
-        
-        // Verify this specific submission exists and belongs to this user
-        $stmt = $this->conn->prepare("SELECT user_id, status FROM submissions WHERE id = ? LIMIT 1");
-        $stmt->bind_param("i", $id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $row = $result->fetch_assoc();
-        $stmt->close();
-        
-        if (!$row) {
-            return false; // submission does not exist
-        }
-        
-        // Check ownership - must be this specific user's submission
-        if ((int)$row['user_id'] !== $userId) {
-            return false; // not your submission
-        }
-        
-        // Restore ONLY this specific submission to pending status
-        $stmt = $this->conn->prepare("UPDATE submissions SET status='pending' WHERE id=? AND user_id=? AND status='deleted' LIMIT 1");
+        // Restore to pending status (not active or accepted)
+        $stmt = $this->conn->prepare("UPDATE submissions SET status='pending' WHERE id=? AND user_id=?");
         $stmt->bind_param("ii", $id, $userId);
         $stmt->execute();
-        $affected = $stmt->affected_rows;
         $stmt->close();
-        
-        return $affected === 1; // Must affect exactly 1 row
     }
 
     /**

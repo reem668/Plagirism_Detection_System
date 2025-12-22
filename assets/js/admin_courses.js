@@ -64,20 +64,11 @@ const URL_GET_INSTRUCTORS = BASE + '/get_instructors.php';
 // -----------------------------
 // Initial load
 // -----------------------------
-function initializeCourses() {
+document.addEventListener('DOMContentLoaded', () => {
   loadCoursesFromServer();
   loadInstructorsForAdd();
   setupButtons();
-  setupCourseSearch();
-}
-
-// Handle both cases: script loaded before or after DOM is ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initializeCourses);
-} else {
-  // DOM is already ready
-  initializeCourses();
-}
+});
 
 function setupButtons() {
   const toggleBtn = document.getElementById('toggleAddCourseBtn');
@@ -106,16 +97,9 @@ function setupButtons() {
 // -----------------------------
 // Load courses (list)
 // -----------------------------
-async function loadCoursesFromServer(searchTerm = '') {
+async function loadCoursesFromServer() {
   try {
-    let url = URL_LIST_COURSES;
-    if (searchTerm && searchTerm.trim() !== '') {
-      url = `${URL_LIST_COURSES}?search=${encodeURIComponent(searchTerm.trim())}`;
-    }
-    
-    console.log('Loading courses from:', url); // Debug log
-    
-    const result = await ajaxGet(url);
+    const result = await ajaxGet(URL_LIST_COURSES);
     if (!result.success) {
       console.error('Failed to load courses:', result.message);
       renderCourses([]);
@@ -461,55 +445,4 @@ function closeAllPanels() {
   const overlay = document.getElementById('panelOverlay');
   if (overlay) overlay.classList.remove('active');
   document.body.style.overflow = '';
-}
-
-// -----------------------------
-// Course Search Functionality
-// -----------------------------
-let searchTimeout = null;
-
-function setupCourseSearch() {
-  const searchInput = document.getElementById('courseSearchInput');
-  const clearBtn = document.getElementById('clearCourseSearchBtn');
-
-  if (!searchInput) {
-    console.warn('Course search input not found - search functionality disabled');
-    return;
-  }
-
-  // Attach event listeners
-  searchInput.addEventListener('input', handleCourseSearch);
-  searchInput.addEventListener('keyup', handleCourseSearch);
-  console.log('Course search event listeners attached');
-
-  if (clearBtn) {
-    clearBtn.addEventListener('click', clearCourseSearch);
-  } else {
-    console.warn('Clear search button not found');
-  }
-}
-
-function handleCourseSearch(event) {
-  // Clear previous timeout
-  if (searchTimeout) {
-    clearTimeout(searchTimeout);
-  }
-
-  // Wait 300ms after user stops typing before searching
-  searchTimeout = setTimeout(() => {
-    const searchInput = document.getElementById('courseSearchInput');
-    if (searchInput) {
-      const searchTerm = searchInput.value.trim();
-      console.log('Searching for:', searchTerm); // Debug log
-      loadCoursesFromServer(searchTerm);
-    }
-  }, 300);
-}
-
-function clearCourseSearch() {
-  const searchInput = document.getElementById('courseSearchInput');
-  if (searchInput) {
-    searchInput.value = '';
-    loadCoursesFromServer('');
-  }
 }
