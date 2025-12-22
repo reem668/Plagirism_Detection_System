@@ -127,7 +127,7 @@ $csrf_token = Csrf::token();
         </div>
 
         <div class="signout-section">
-            <a href="/Plagirism_Detection_System/logout" style="text-decoration: none;">
+            <a href="<?= BASE_URL ?>/logout" style="text-decoration: none;">
                 <button class="btn-signout">🚪 Sign Out</button>
             </a>
         </div>

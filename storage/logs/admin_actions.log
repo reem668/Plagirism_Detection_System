@@ -2,3 +2,11 @@
 [2025-12-21 21:32:01] Admin Admin updated user ID 2: shadw -> shadw, role: student, status: active
 [2025-12-22 11:44:16] Admin Admin updated user ID 51: reem abu bakr -> reem abu bakr, role: instructor, status: active
 [2025-12-22 11:44:42] Admin Admin updated user ID 51: reem abu bakr -> reem abu bakr, role: student, status: active
+[2025-12-22 15:55:56] Admin gamal updated user ID 51: reem abu bakr -> reem abu bakr, role: student, status: banned
+[2025-12-22 15:56:18] Admin gamal updated user ID 51: reem abu bakr -> reem abu bakr, role: student, status: active
+[2025-12-22 15:56:27] Admin gamal updated user ID 51: reem abu bakr -> reem abu bakr, role: instructor, status: active
+[2025-12-22 15:56:35] Admin gamal updated user ID 51: reem abu bakr -> reem abu bakr, role: instructor, status: banned
+[2025-12-22 15:56:45] Admin gamal updated user ID 51: reem abu bakr -> reem abu bakr, role: student, status: active
+[2025-12-22 15:57:01] Admin gamal updated user ID 51: reem abu bakr -> reem abu bakr, role: instructor, status: active
+[2025-12-22 15:57:12] Admin gamal updated user ID 51: reem abu bakr -> reem abu bakr, role: instructor, status: banned
+[2025-12-22 15:57:27] Admin gamal updated user ID 51: reem abu bakr -> reem abu bakr, role: student, status: active

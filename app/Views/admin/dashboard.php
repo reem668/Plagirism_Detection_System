@@ -24,7 +24,7 @@ $auth    = new AuthMiddleware();
 
 // Double-check authentication
 if (!$session->isLoggedIn() || $session->getUserRole() !== 'admin') {
-    header('Location: /Plagirism_Detection_System/signup.php');
+     header('Location: ' . BASE_URL . '/signup');
     exit();
 }
 

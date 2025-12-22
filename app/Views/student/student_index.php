@@ -314,7 +314,7 @@ function isActiveView(string $view, string $currentView): string
             <a href="student_index.php?view=trash" id="trashBtn" data-tooltip="Trash">🗑️</a>
             <a href="student_index.php?view=chat" id="chatBtn" data-tooltip="Chat with Instructor">💬</a>
         </div>
-        <a href="/Plagirism_Detection_System/logout" class="logout" id="logoutBtn" data-tooltip="Logout">↻</a>
+        <a href="<?= BASE_URL ?>/logout" class="logout" id="logoutBtn" data-tooltip="Logout">↻</a>
 
     </nav>
 
