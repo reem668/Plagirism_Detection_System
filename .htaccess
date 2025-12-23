@@ -3,20 +3,15 @@
 
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    
-    # Set base to your subdirectory if applicable
-    # If in root, use: RewriteBase /
-    # If in subdirectory: RewriteBase /Plagirism_Detection_System/
     RewriteBase /Plagirism_Detection_System/
 
-    # Don't rewrite requests for existing files
-    RewriteCond %{REQUEST_FILENAME} !-f
-    
-    # Don't rewrite requests for existing directories
-    RewriteCond %{REQUEST_FILENAME} !-d
-    
-    # Route everything else through index.php
-    RewriteRule ^(.*)$ index.php [QSA,L]
+    # 1) If the request is for an existing file or directory, serve it directly
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # 2) Otherwise, route everything through index.php
+    RewriteRule ^ index.php [QSA,L]
 </IfModule>
 
 # Security Headers

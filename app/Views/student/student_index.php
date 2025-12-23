@@ -2,6 +2,7 @@
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
+
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
@@ -9,9 +10,6 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 /**
  * Protected Student Dashboard
  * Only accessible by authenticated student users
- * 
- * @author Your Team
- * @version 2.0
  */
 
 require_once __DIR__ . '/../../Helpers/SessionManager.php';
@@ -19,6 +17,7 @@ require_once __DIR__ . '/../../Middleware/AuthMiddleware.php';
 require_once __DIR__ . '/../../Helpers/Csrf.php';
 require_once __DIR__ . '/../../Controllers/SubmissionController.php';
 require_once __DIR__ . '/../../Controllers/StudentController.php';
+
 // Ensure global database connection
 if (!isset($conn)) {
     require __DIR__ . '/../../../includes/db.php';
@@ -33,10 +32,10 @@ use Controllers\SubmissionController;
 use Controllers\StudentController;
 use Helpers\Csrf;
 
-// Define BASE_URL if not already defined
+// BASE_URL is defined in index.php, but define defensively if view is hit directly
 if (!defined('BASE_URL')) {
-    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
-    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    $protocol  = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+    $host      = $_SERVER['HTTP_HOST'] ?? 'localhost';
     $scriptDir = dirname($_SERVER['SCRIPT_NAME']);
     define('BASE_URL', $protocol . '://' . $host . ($scriptDir !== '/' ? $scriptDir : ''));
 }
@@ -44,28 +43,28 @@ if (!defined('BASE_URL')) {
 // ============================================
 // CONSTANTS
 // ============================================
-const STATUS_ACCEPTED = 'accepted';
-const STATUS_REJECTED = 'rejected';
-const STATUS_PENDING = 'pending';
+const STATUS_ACCEPTED   = 'accepted';
+const STATUS_REJECTED   = 'rejected';
+const STATUS_PENDING    = 'pending';
 
-const ROLE_INSTRUCTOR = 'instructor';
-const ROLE_STUDENT = 'student';
+const ROLE_INSTRUCTOR   = 'instructor';
+const ROLE_STUDENT      = 'student';
 
-const PLAGIARISM_HIGH = 70;
+const PLAGIARISM_HIGH   = 70;
 const PLAGIARISM_MEDIUM = 40;
 
 // ============================================
 // INITIALIZATION
 // ============================================
 $session = SessionManager::getInstance();
-$auth = new AuthMiddleware();
+$auth    = new AuthMiddleware();
 $auth->requireRole(ROLE_STUDENT);
 
 $currentUser = $auth->getCurrentUser();
-$userId = $currentUser['id'];
-$username = $currentUser['name'];
+$userId      = $currentUser['id'];
+$username    = $currentUser['name'];
 
-$ctrl = new SubmissionController();
+$ctrl      = new SubmissionController();
 $csrfToken = Csrf::token();
 
 // ============================================
@@ -82,14 +81,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // HELPER FUNCTIONS
 // ============================================
 
-/**
- * Verify user owns a submission
- * 
- * @param int $submissionId
- * @param int $userId
- * @param array $submissions
- * @return bool
- */
 function verifyOwnership(int $submissionId, int $userId, array $submissions): bool
 {
     foreach ($submissions as $submission) {
@@ -100,12 +91,6 @@ function verifyOwnership(int $submissionId, int $userId, array $submissions): bo
     return false;
 }
 
-/**
- * Get plagiarism color based on percentage
- * 
- * @param float $similarity
- * @return string Hex color code
- */
 function getPlagiarismColor(float $similarity): string
 {
     if ($similarity > PLAGIARISM_HIGH) {
@@ -116,12 +101,6 @@ function getPlagiarismColor(float $similarity): string
     return '#10b981'; // Green
 }
 
-/**
- * Get status badge styling
- * 
- * @param string $status
- * @return array ['color' => string, 'badge' => string]
- */
 function getStatusBadge(string $status): array
 {
     switch ($status) {
@@ -136,9 +115,6 @@ function getStatusBadge(string $status): array
 
 /**
  * Fetch active instructors from database
- * 
- * @param mysqli $conn Database connection
- * @return array List of instructors
  */
 function fetchInstructors($conn): array
 {
@@ -148,7 +124,12 @@ function fetchInstructors($conn): array
         return $instructors;
     }
 
-    $stmt = $conn->prepare("SELECT id, name, email FROM users WHERE role = ? AND status = 'active' ORDER BY name ASC");
+    $stmt = $conn->prepare(
+        "SELECT id, name, email 
+         FROM users 
+         WHERE role = ? AND status = 'active' 
+         ORDER BY name ASC"
+    );
     $role = ROLE_INSTRUCTOR;
     $stmt->bind_param('s', $role);
 
@@ -163,21 +144,15 @@ function fetchInstructors($conn): array
     return $instructors;
 }
 
-/**
- * Count unseen notifications for user
- * 
- * @param array $submissions
- * @return int
- */
 function countUnseenNotifications(array $submissions): int
 {
     $count = 0;
 
     foreach ($submissions as $submission) {
         $hasFeedback = !empty($submission['feedback']);
-        $isAccepted = $submission['status'] === STATUS_ACCEPTED;
-        $isRejected = $submission['status'] === STATUS_REJECTED;
-        $seen = $submission['notification_seen'] ?? 0;
+        $isAccepted  = $submission['status'] === STATUS_ACCEPTED;
+        $isRejected  = $submission['status'] === STATUS_REJECTED;
+        $seen        = $submission['notification_seen'] ?? 0;
 
         if (($hasFeedback || $isAccepted || $isRejected) && !$seen) {
             $count++;
@@ -189,27 +164,28 @@ function countUnseenNotifications(array $submissions): int
 
 /**
  * Redirect with message
- * 
- * @param string $location
- * @param string $message
- * @param string $type 'success' or 'error'
+ * All redirects must end up on /student, never student_index.php.
  */
 function redirectWithMessage(string $location, string $message, string $type = 'success'): void
 {
-    // Convert old student_index.php URLs to routing format
+    // Convert any old student_index.php usage
     if (strpos($location, 'student_index.php') !== false) {
-        // Extract query string
         $queryString = '';
         if (strpos($location, '?') !== false) {
-            $parts = explode('?', $location, 2);
+            $parts       = explode('?', $location, 2);
             $queryString = '?' . $parts[1];
         }
         $location = BASE_URL . '/student' . $queryString;
-    } elseif (!preg_match('/^https?:\/\//', $location) && strpos($location, '/') !== 0) {
-        // If it's a relative path without leading slash, prepend BASE_URL/student
-        $location = BASE_URL . '/student?' . parse_url($location, PHP_URL_QUERY);
+    } elseif (strpos($location, '/student') === 0) {
+        // Already a /student path (like /student?view=trash)
+        $location = BASE_URL . $location;
+    } elseif (!preg_match('/^https?:\/\//', $location)) {
+        // Any other relative location → send to /student with same query
+        $query    = parse_url($location, PHP_URL_QUERY);
+        $qs       = $query ? ('?' . $query) : '';
+        $location = BASE_URL . '/student' . $qs;
     }
-    
+
     $_SESSION[$type] = $message;
     header("Location: $location");
     exit;
@@ -221,7 +197,7 @@ function redirectWithMessage(string $location, string $message, string $type = '
 
 // Handle DELETE action
 if (isset($_POST['delete_id'])) {
-    $submissionId = intval($_POST['delete_id']);
+    $submissionId      = (int) $_POST['delete_id'];
     $activeSubmissions = $ctrl->getUserSubmissions($userId, 'active');
 
     if (verifyOwnership($submissionId, $userId, $activeSubmissions)) {
@@ -229,20 +205,20 @@ if (isset($_POST['delete_id'])) {
 
         if ($result === true) {
             redirectWithMessage(
-                BASE_URL . '/student?view=trash',
+                '/student?view=trash',
                 "Submission #$submissionId moved to trash successfully",
                 'success'
             );
         } else {
             redirectWithMessage(
-                BASE_URL . '/student?view=history',
+                '/student?view=history',
                 "Failed to delete submission #$submissionId",
                 'error'
             );
         }
     } else {
         redirectWithMessage(
-            BASE_URL . '/student?view=history',
+            '/student?view=history',
             'Unauthorized: You can only delete your own submissions.',
             'error'
         );
@@ -251,28 +227,32 @@ if (isset($_POST['delete_id'])) {
 
 // Handle RESTORE action
 if (isset($_POST['restore_id'])) {
-    $submissionId = intval($_POST['restore_id']);
+    $submissionId      = (int) $_POST['restore_id'];
     $deletedSubmissions = $ctrl->getUserSubmissions($userId, 'deleted');
 
     if (verifyOwnership($submissionId, $userId, $deletedSubmissions)) {
         $ctrl->restore($submissionId, $userId);
         redirectWithMessage(
-            BASE_URL . '/student?view=trash',
+            '/student?view=trash',
             "Submission #$submissionId restored successfully",
             'success'
         );
     } else {
         redirectWithMessage(
-            BASE_URL . '/student?view=trash',
+            '/student?view=trash',
             'Unauthorized: You can only restore your own submissions.',
             'error'
         );
     }
 }
 
-// Handle SUBMISSION
+// Handle SUBMISSION (normal form submit)
 $submissionResult = null;
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete_id']) && !isset($_POST['restore_id'])) {
+if (
+    $_SERVER['REQUEST_METHOD'] === 'POST' &&
+    !isset($_POST['delete_id']) &&
+    !isset($_POST['restore_id'])
+) {
     $_POST['user_id'] = $userId; // Force correct user ID
     $submissionResult = $ctrl->submit();
 }
@@ -280,28 +260,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete_id']) && !iss
 // ============================================
 // DATA FETCHING
 // ============================================
-$submissions = $ctrl->getUserSubmissions($userId, 'active');
+$submissions        = $ctrl->getUserSubmissions($userId, 'active');
 $deletedSubmissions = $ctrl->getUserSubmissions($userId, 'deleted');
-$instructors = fetchInstructors($conn);
-$notificationCount = countUnseenNotifications($submissions);
+$instructors        = fetchInstructors($conn);
+$notificationCount  = countUnseenNotifications($submissions);
 
 // ============================================
-// VIEW SELECTION (SERVER-SIDE FALLBACK)
+// VIEW SELECTION
 // ============================================
 $currentView = $_GET['view'] ?? 'home';
-$validViews = ['home', 'history', 'notifications', 'trash', 'chat'];
+$validViews  = ['home', 'history', 'notifications', 'trash', 'chat'];
 if (!in_array($currentView, $validViews, true)) {
     $currentView = 'home';
 }
+
 function isActiveView(string $view, string $currentView): string
 {
     return $view === $currentView ? 'active' : '';
 }
-
 ?>
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -311,7 +290,6 @@ function isActiveView(string $view, string $currentView): string
     <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/chatbot.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
-
 <body>
 
     <!-- Sidebar -->
@@ -325,7 +303,7 @@ function isActiveView(string $view, string $currentView): string
             <a href="<?= BASE_URL ?>/student?view=home" id="homeBtn" data-tooltip="Home">🏠</a>
             <a href="<?= BASE_URL ?>/student?view=history" id="historyBtn" data-tooltip="Past History">📜</a>
             <a href="<?= BASE_URL ?>/student?view=notifications" id="notificationsBtn" data-tooltip="Notifications"
-                class="notification-link">
+               class="notification-link">
                 🔔
                 <?php if ($notificationCount > 0): ?>
                     <span id="notificationBadge" class="notification-badge">
@@ -337,7 +315,6 @@ function isActiveView(string $view, string $currentView): string
             <a href="<?= BASE_URL ?>/student?view=chat" id="chatBtn" data-tooltip="Chat with Instructor">💬</a>
         </div>
         <a href="<?= BASE_URL ?>/logout" class="logout" id="logoutBtn" data-tooltip="Logout">↻</a>
-
     </nav>
 
     <!-- Main content -->
@@ -417,7 +394,7 @@ function isActiveView(string $view, string $currentView): string
                         <div class="alert-warning">
                             <?= htmlspecialchars($submissionResult['alert_message'], ENT_QUOTES) ?>
                         </div>
-                        <a href="<?= BASE_URL ?>/ajax/download_file.php?id=<?= $submissionResult['submission_id'] ?>" class="download-btn">
+                        <a href="<?= BASE_URL ?>/download.php?id=<?= $submissionResult['submission_id'] ?>" class="download-btn">
                             Download Report
                         </a>
                     <?php endif; ?>
@@ -431,8 +408,8 @@ function isActiveView(string $view, string $currentView): string
             <?php if ($submissions): ?>
                 <?php foreach ($submissions as $submission):
                     $statusInfo = getStatusBadge($submission['status']);
-                    $plagColor = getPlagiarismColor($submission['similarity']);
-                    ?>
+                    $plagColor  = getPlagiarismColor($submission['similarity']);
+                ?>
                     <div class="history-item">
                         <h3>Submission #<?= $submission['id'] ?></h3>
                         <span class="status-badge" style="background: <?= $statusInfo['color'] ?>;">
@@ -462,7 +439,7 @@ function isActiveView(string $view, string $currentView): string
                         <?php endif; ?>
 
                         <?php if ($ctrl->getReportPath($submission['id'])): ?>
-                            <a href="<?= BASE_URL ?>/ajax/download_file.php?id=<?= $submission['id'] ?>">Download Report</a>
+                            <a href="<?= BASE_URL ?>/download.php?id=<?= $submission['id'] ?>">Download Report</a>
                         <?php endif; ?>
 
                         <form method="POST" action="<?= BASE_URL ?>/student" class="delete-form">
@@ -487,8 +464,8 @@ function isActiveView(string $view, string $currentView): string
 
             foreach ($submissions as $submission):
                 $hasFeedback = !empty($submission['feedback']);
-                $isAccepted = $submission['status'] === STATUS_ACCEPTED;
-                $isRejected = $submission['status'] === STATUS_REJECTED;
+                $isAccepted  = $submission['status'] === STATUS_ACCEPTED;
+                $isRejected  = $submission['status'] === STATUS_REJECTED;
 
                 if (!$hasFeedback && !$isAccepted && !$isRejected) {
                     continue;
@@ -496,7 +473,7 @@ function isActiveView(string $view, string $currentView): string
 
                 $hasNotifications = true;
                 $statusInfo = getStatusBadge($submission['status']);
-                $plagColor = getPlagiarismColor($submission['similarity']);
+                $plagColor  = getPlagiarismColor($submission['similarity']);
                 ?>
                 <div class="notification-card" style="border-left-color: <?= $statusInfo['color'] ?>;">
                     <div class="notification-header">
@@ -547,10 +524,10 @@ function isActiveView(string $view, string $currentView): string
                         <div class="report-actions">
                             <strong>📊 Detailed Report Available</strong>
                             <div class="action-buttons">
-                                <a href="<?= BASE_URL ?>/ajax/view_report.php?id=<?= $submission['id'] ?>" target="_blank" class="btn btn-view">
+                                <a href="<?= BASE_URL ?>/view_report.php?id=<?= $submission['id'] ?>" target="_blank" class="btn btn-view">
                                     👁 View Report
                                 </a>
-                                <a href="<?= BASE_URL ?>/ajax/download_file.php?id=<?= $submission['id'] ?>" class="btn btn-download">
+                                <a href="<?= BASE_URL ?>/download.php?id=<?= $submission['id'] ?>" class="btn btn-download">
                                     📥 Download Report
                                 </a>
                             </div>
@@ -593,7 +570,6 @@ function isActiveView(string $view, string $currentView): string
         </section>
 
         <!-- Chat Page -->
-        <!-- Chat Page -->
         <section id="chatPage" class="page <?= isActiveView('chat', $currentView) ?>">
             <h1>💬 Chat with Instructor</h1>
 
@@ -622,10 +598,11 @@ function isActiveView(string $view, string $currentView): string
             </form>
         </section>
     </main>
+
     <script>
         window.CSRF_TOKEN = '<?= htmlspecialchars($csrfToken, ENT_QUOTES) ?>';
-        window.USER_ID = '<?= htmlspecialchars($userId, ENT_QUOTES) ?>';
-        window.BASE_URL = '<?= BASE_URL ?>';
+        window.USER_ID    = '<?= htmlspecialchars($userId, ENT_QUOTES) ?>';
+        window.BASE_URL   = '<?= BASE_URL ?>';
     </script>
     <script src="<?= BASE_URL ?>/assets/js/student_dashboard.js"></script>
     <script src="<?= BASE_URL ?>/assets/js/chat.js"></script>
@@ -653,16 +630,11 @@ function isActiveView(string $view, string $currentView): string
                 `
             }).then((result) => {
                 if (result.isConfirmed) {
-                    // thorough cleanup or explicit redirect
                     window.location.href = href;
                 }
             });
         });
     </script>
     <script src="<?= BASE_URL ?>/assets/js/chatbot.js"></script>
-
-
-
 </body>
-
 </html>
