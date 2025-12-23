@@ -603,13 +603,13 @@ class AuthController
     {
         switch ($role) {
             case 'admin':
-                $this->alertRedirect("Welcome Admin!", "/Plagirism_Detection_System/admin.php");
+                $this->alertRedirect("Welcome Admin!", "/Plagirism_Detection_System/admin");
                 break;
             case 'instructor':
-                $this->alertRedirect("Welcome Instructor!", "/Plagirism_Detection_System/Instructordashboard.php");
+                $this->alertRedirect("Welcome Instructor!", "/Plagirism_Detection_System/instructor");
                 break;
             default:
-                $this->alertRedirect("Welcome Student!", "/Plagirism_Detection_System/app/Views/student/student_index.php");
+                $this->alertRedirect("Welcome Student!", "/Plagirism_Detection_System/app/Views/student/student");
                 break;
         }
     }
