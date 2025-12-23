@@ -6,7 +6,7 @@
 
 // Security check
 if (!defined('ADMIN_ACCESS')) {
-    die('Direct access not permitted. Please access through admin.php');
+    die('Direct access not permitted. Please access through the admin panel.');
 }
 
 require_once __DIR__ . '/../../Helpers/SessionManager.php';
