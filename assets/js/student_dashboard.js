@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', function () {
             btn.addEventListener('click', function (e) {
                 e.preventDefault();
                 showPage(pages[key]);
-                window.history.pushState({}, '', `student_index.php?view=${key}`);
+                window.history.pushState({}, '', `student.php?view=${key}`);
 
                 if (key === 'notifications') {
                     markNotificationsAsSeen();

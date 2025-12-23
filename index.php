@@ -8,6 +8,7 @@
  * - Models handle data operations
  * - Views handle presentation
  */
+error_log("INDEX HIT: " . ($_SERVER['REQUEST_URI'] ?? ''));
 
 // Start session and error handling
 ini_set('display_errors', 1);
@@ -44,6 +45,16 @@ if ($scriptName !== '/' && $scriptName !== '\\') {
 
 // Normalize path
 $requestPath = '/' . trim($requestPath, '/');
+if ($requestPath === '/download.php') {
+    require APP_ROOT . '/app/Views/student/download.php';
+    exit;
+}
+if ($requestPath === '/view_report.php') {
+    require APP_ROOT . '/app/Views/student/view_report.php';
+    exit;
+}
+
+
 
 // Route the request
 $route = trim($requestPath, '/');

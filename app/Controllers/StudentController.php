@@ -33,7 +33,7 @@ class StudentController {
         $validViews = ['home','history','notifications','trash','chat'];
         if(!in_array($view, $validViews)) $view='home';
 
-        require __DIR__ . '/../Views/student/dashboard.php';
+        require __DIR__ . '/../Views/student/student_index.php';
     }
 
     protected function countUnseen($submissions) {
